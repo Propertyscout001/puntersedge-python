@@ -2,7 +2,7 @@
 
 Official Python client for the [**PuntersEdge Australian Sports Odds API**](https://puntersedge.online/api-platform) — live bookmaker odds across 11 Australian books, racing next-to-go, best-odds comparison, and pre-computed **arbitrage / value** signals, all as clean JSON.
 
-> Get a **free API key** (2,500 credits/month, no credit card) → **[puntersedge.online/api-platform](https://puntersedge.online/api-platform#signup)**
+> Get a **free API key** (1,500 credits/month, no credit card) → **[puntersedge.online/api-platform](https://puntersedge.online/api-platform#signup)**
 
 [![PyPI](https://img.shields.io/pypi/v/puntersedge.svg)](https://pypi.org/project/puntersedge/)
 [![Python](https://img.shields.io/pypi/pyversions/puntersedge.svg)](https://pypi.org/project/puntersedge/)

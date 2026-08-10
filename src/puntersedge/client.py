@@ -33,7 +33,7 @@ class PuntersEdge:
     best-odds comparison, and pre-computed arbitrage / value signals — all
     as clean JSON.
 
-    Get a free API key (2,500 credits/mo, no credit card) at
+    Get a free API key (1,500 credits/mo, no credit card) at
     https://puntersedge.online/api-platform#signup
 
     Example
