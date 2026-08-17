@@ -122,6 +122,7 @@ pe = PuntersEdge(
 - 📚 **Documentation** — https://puntersedge.online/developers
 - 💳 **Pricing** — https://puntersedge.online/api/pricing
 - 🧮 **Live sandbox (no key)** — https://puntersedge.online/api-platform#trylive
+- 📮 **Postman collection** — https://api.puntersedge.online/postman.json (Postman → Import → Link)
 
 ## Disclaimer
 
