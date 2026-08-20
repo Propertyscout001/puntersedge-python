@@ -47,6 +47,7 @@ class Stub:
         self._odds = odds or {}
         self.odds_error = odds_error or {}
         self.calls = []
+        self.odds_kwargs = []
 
     def arb_sports(self, sport_key=None):
         self.calls.append(("arb_sports", sport_key))
@@ -56,8 +57,10 @@ class Stub:
         self.calls.append(("arb_lines", sport_key))
         return []
 
-    def odds(self, sport, markets=None):
+    def odds(self, sport, markets=None, bookmakers=None, odds_format=None,
+             max_age_minutes=None):
         self.calls.append(("odds", sport))
+        self.odds_kwargs.append({"markets": markets, "max_age_minutes": max_age_minutes})
         if sport in self.odds_error:
             raise RuntimeError(self.odds_error[sport])
         return self._odds.get(sport, [])
@@ -253,3 +256,71 @@ def test_unknown_age_allow_lets_an_unenriched_scan_through():
     cfg = GateConfig(unknown_age=UnknownAge.ALLOW)
     r = Scanner(Stub(arbs=[AFL_ARB], odds={}), cfg).poll()
     assert len(r.arbs) == 1
+
+
+# ── enrichment window: the bug that made the scanner misreport its own diagnosis ──────
+
+def test_enrichment_states_its_age_window_instead_of_inheriting_360():
+    """`/v1/sports/{k}/odds` defaults to maxAgeMinutes=360 and DROPS older books, so a
+    stale price arrived as no price at all — reported as unknown_age when the real problem
+    was stale_quote. Measured against production 2026-08-20: every server-flagged arb was
+    misreported this way."""
+    c = Stub(odds=FRESH)
+    Scanner(c, GateConfig()).poll()
+    assert c.odds_kwargs, "no enrichment call was made"
+    for kw in c.odds_kwargs:
+        assert kw["max_age_minutes"] == 1440, (
+            "enrichment inherited the API default instead of stating a window: %r" % kw
+        )
+
+
+def test_enrichment_window_is_clamped_to_what_the_api_accepts():
+    """The endpoint 422s above 1440, and a rejected enrichment call would take out the
+    freshness check for a whole sport."""
+    c = Stub(odds=FRESH)
+    Scanner(c, GateConfig(), enrich_max_age_minutes=99999).poll()
+    assert c.odds_kwargs[0]["max_age_minutes"] == 1440
+    c2 = Stub(odds=FRESH)
+    Scanner(c2, GateConfig(), enrich_max_age_minutes=0).poll()
+    assert c2.odds_kwargs[0]["max_age_minutes"] == 1
+
+
+def test_a_stale_book_reports_stale_quote_not_unknown_age():
+    """With the window stated, an ancient price is visible and correctly diagnosed."""
+    odds = {"afl": [{"id": "e1", "bookmakers": [
+        {"key": "sportsbet", "age_seconds": 5},
+        {"key": "tab", "age_seconds": 86400}]}]}   # a day old, inside a 1440-min window
+    r = Scanner(Stub(arbs=[AFL_ARB], odds=odds), GateConfig()).poll()
+    assert r.reasons["stale_quote"] == 1
+    assert "unknown_age" not in r.reasons
+
+
+def test_the_default_freshness_budget_matches_the_feed_it_reads():
+    """120s was carried over from a feed refreshing every ~15s. This one refreshes every
+    900s with a measured median age of 572s, so 120s rejected 100% of live data."""
+    assert GateConfig().max_quote_age_s == 900.0
+    ages = {"afl": [{"id": "e1", "bookmakers": [
+        {"key": "sportsbet", "age_seconds": 572},
+        {"key": "tab", "age_seconds": 572}]}]}     # the measured production median
+    r = Scanner(Stub(arbs=[AFL_ARB], odds=ages), GateConfig()).poll()
+    assert len(r.arbs) == 1, "a median-aged live price was refused by the default gate"
+
+
+def test_the_stub_signature_matches_the_real_client():
+    """A stub more permissive than the real client hides an incompatibility.
+
+    The 0.2.1 enrichment fix passed every test and then died in production with
+    `odds() got an unexpected keyword argument` — because this stub accepted a kwarg the
+    real client did not have. A stub is only evidence if it is at least as strict.
+    """
+    import inspect
+
+    from puntersedge import PuntersEdge
+
+    real = set(inspect.signature(PuntersEdge.odds).parameters) - {"self"}
+    stub = set(inspect.signature(Stub.odds).parameters) - {"self"}
+    unsupported = stub - real - {"sport"}          # the stub names its first arg `sport`
+    assert not unsupported, (
+        "the stub accepts kwargs the real client rejects: %s" % sorted(unsupported)
+    )
+    assert "max_age_minutes" in real, "the client cannot pass an age window"

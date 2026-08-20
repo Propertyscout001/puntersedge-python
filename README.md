@@ -123,13 +123,13 @@ Create the file once:
 
 ```bash
 mkdir -p ~/.config/puntersedge
-printf '[puntersedge]\napi_key = pe_...\n' > ~/.config/puntersedge/config
+printf '[puntersedge]\napi_key = 3f8b1c04-5e7a-4d21-9b6e-0a2c8d5f1e93\n' > ~/.config/puntersedge/config
 chmod 600 ~/.config/puntersedge/config
 ```
 
 ```ini
 [puntersedge]
-api_key  = pe_...
+api_key  = 3f8b1c04-5e7a-4d21-9b6e-0a2c8d5f1e93
 base_url = https://api.puntersedge.online/v1
 timeout  = 15
 retries  = 2
