@@ -225,13 +225,25 @@ _ARB_COERCE = {
 }
 
 
-def refusal_reasons(opp: Opportunity, cfg: Optional[GateConfig] = None) -> List[str]:
+def refusal_reasons(
+    opp: Opportunity,
+    cfg: Optional[GateConfig] = None,
+    *,
+    include_freshness: bool = True,
+) -> List[str]:
     """EVERY reason to refuse this opportunity, in a fixed order. Empty means take it.
 
     Deliberately total: a gate that raises is recorded as `malformed` rather than
     propagated. This runs in a list comprehension over a whole poll, and an AttributeError
     on one deformed opp must not be able to kill the tick and every good arb in it.
     Refusing that one opp WITH a reason is strictly safer than losing the batch.
+
+    `include_freshness=False` runs only the gates that need nothing but the arb payload.
+    That exists because freshness is the ONLY gate that costs money: ages are not in the
+    arb response and have to be fetched per sport at 1 credit each. Running the free gates
+    first and enriching only the survivors is the difference between a scanner that fits a
+    credit budget and one that does not — see `scanner.py`. It is a cost optimisation, not
+    a weaker check: nothing may be acted on until the full gate set has passed.
     """
     cfg = cfg or GateConfig()
     out: List[str] = []
@@ -292,13 +304,14 @@ def refusal_reasons(opp: Opportunity, cfg: Optional[GateConfig] = None) -> List[
     # Freshness. Split into two distinct tokens on purpose — "this price is too old" and
     # "nobody told me how old this price is" are different problems with different fixes,
     # and merging them hides the second one completely.
-    _chk("unknown_age",
-         lambda: cfg.unknown_age is UnknownAge.REJECT
-         and any(leg.quote_age_s is None for leg in opp.legs))
-    _chk("stale_quote",
-         lambda: cfg.max_quote_age_s > 0
-         and any(leg.quote_age_s is not None and leg.quote_age_s > cfg.max_quote_age_s
-                 for leg in opp.legs))
+    if include_freshness:
+        _chk("unknown_age",
+             lambda: cfg.unknown_age is UnknownAge.REJECT
+             and any(leg.quote_age_s is None for leg in opp.legs))
+        _chk("stale_quote",
+             lambda: cfg.max_quote_age_s > 0
+             and any(leg.quote_age_s is not None and leg.quote_age_s > cfg.max_quote_age_s
+                     for leg in opp.legs))
 
     _chk("book_not_bettable",
          lambda: bool(cfg.bettable_books)
@@ -307,9 +320,14 @@ def refusal_reasons(opp: Opportunity, cfg: Optional[GateConfig] = None) -> List[
     return out
 
 
-def evaluate(opp: Opportunity, cfg: Optional[GateConfig] = None) -> Verdict:
+def evaluate(
+    opp: Opportunity,
+    cfg: Optional[GateConfig] = None,
+    *,
+    include_freshness: bool = True,
+) -> Verdict:
     """Everything a caller could want about one gate decision, in one call."""
-    rs = refusal_reasons(opp, cfg)
+    rs = refusal_reasons(opp, cfg, include_freshness=include_freshness)
     return Verdict(ok=not rs, reasons=rs, verdict_class=classify(rs))
 
 

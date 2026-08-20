@@ -157,6 +157,66 @@ user owns it or can write to it, and warned about if others can read it (`chmod 
 that). It holds one secret, your PuntersEdge API key. It has exactly two sections, and any
 other section is a startup error.
 
+## Scanning and stake sizing
+
+```python
+from puntersedge import PuntersEdge
+from puntersedge.arb import GateConfig, Scanner, size
+
+scanner = Scanner(
+    PuntersEdge(),
+    GateConfig(bettable_books={"sportsbet", "tab", "neds"}),
+    sports=["afl", "nrl"],
+    credit_budget=500,
+)
+
+result = scanner.poll()
+print(result.summary())
+# 41 candidates | 1 passed | 5 credits | refused: no_cross=28, server_not_arb=9, stale_quote=3
+
+for opp in result.arbs:
+    plan = size(opp, total=200, minimums={"sportsbet": 5.0})
+    if plan:
+        for leg in plan.legs:
+            print(f"  {leg.book:12} {leg.selection:24} ${leg.stake:7.2f} @ {leg.odds}")
+        print(f"  guaranteed ${plan.profit:.2f} ({plan.profit_pct:.2f}%)")
+    else:
+        print(" ", plan.reason)
+```
+
+**`plan.profit` is the worst case after rounding** — what you are actually guaranteed, not
+the textbook figure. That distinction is the whole point of the module: rounding an equal-
+profit split to whole dollars produced a *guaranteed loss* in 6.9% of thin arbs we tested,
+and was worse than optimal in 56%. `size()` searches the rounding combinations for the one
+that maximises your worst case, and refuses outright when nothing clears zero.
+
+**When a poll finds nothing, ask it why.** `result.diagnosis()` distinguishes an efficient
+market from a broken scanner — a filter matching no sports, enrichment failing, or every
+candidate priced at books you don't hold. A count on its own cannot.
+
+### Credits — read this before you set an interval
+
+A poll costs 3 credits, plus 1 per sport that needs a freshness check. Prices ages are not
+in the arb response, so they have to be fetched separately.
+
+| interval | credits/month | vs free tier (1,500) |
+|---|---|---|
+| 60s | ~259,000 | 173× over |
+| 5 min | ~52,000 | 35× over |
+| 15 min | ~17,000 | 12× over |
+| 1 hour | ~4,300 | 3× over |
+| 3 hours | ~1,400 | fits |
+
+**The free tier cannot run a live scanner.** That is arithmetic, not a limitation we chose.
+A useful sports scanner wants Starter or above. `scanner.budget_advice(interval)` prints the
+number for your configuration, and `credit_budget=` makes the scanner refuse to exceed a cap
+rather than silently draining your month.
+
+Two things keep the bill down automatically: gates that need only the arb payload run
+*first*, so only sports with surviving candidates get paid for; and there is no point
+polling faster than 15 minutes, because that is how often the upstream sports feed refreshes
+— a faster loop buys nothing but spend.
+
 ## Boundaries
 
 This package **never holds bookmaker credentials, never places bets, and never operates a
