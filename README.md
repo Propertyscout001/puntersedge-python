@@ -17,7 +17,7 @@ Most "sports odds API" products have thin Australian coverage. PuntersEdge is **
 - 🟢 **Live bookmaker odds** — one REST endpoint, 11 AU books
 - 🏇 **Racing next-to-go** — runners + prices for horse, greyhound, harness
 - ⚖️ **Best-odds comparison** — best price per selection across every book
-- 🎯 **Arbitrage, pre-computed** — surebets and spreads/totals line arbs with stakes + guaranteed profit already calculated. Racing back/lay against the exchange is withheld pending a Betfair data licence; use `racing_best_odds()` for cross-book racing value
+- 🎯 **Arbitrage, pre-computed** — surebets and spreads/totals line arbs, with suggested stake splits already calculated for you to place yourself. Racing back/lay against the exchange is withheld pending a Betfair data licence; use `racing_best_odds()` for cross-book racing value
 - 📊 **Value & promo boards** — daily plays ranked by EV per $1
 - 🔌 **Predictable JSON** — simple `X-API-Key` auth
 
@@ -34,7 +34,7 @@ pip install puntersedge
 ```python
 from puntersedge import PuntersEdge
 
-pe = PuntersEdge("YOUR_API_KEY")  # https://puntersedge.online/api-platform#signup
+pe = PuntersEdge()  # https://puntersedge.online/api-platform#signup
 
 # List active sports
 for sport in pe.sports():
@@ -57,7 +57,7 @@ races = pe.racing_next_to_go(categories="horse,greyhound")
 ```python
 from puntersedge import PuntersEdge
 
-pe = PuntersEdge("YOUR_API_KEY")
+pe = PuntersEdge()
 for arb in pe.arb_sports(min_profit_pct=0):
     if arb.get("is_arb"):
         print(f"{arb['home_team']} v {arb['away_team']}: {arb['arb_pct']}%")
@@ -65,7 +65,7 @@ for arb in pe.arb_sports(min_profit_pct=0):
             print(f"   stake ${leg['stake']} on {leg['name']} @ {leg['bookmaker']}")
 ```
 
-Racing back/lay arb against the Betfair exchange:
+Racing cross-book value (no exchange needed):
 
 ```python
 races = pe.racing_best_odds(categories="horse", num_races=5)
@@ -95,7 +95,7 @@ races = pe.racing_best_odds(categories="horse", num_races=5)
 ```python
 from puntersedge import PuntersEdge, RateLimitError, AuthenticationError
 
-pe = PuntersEdge("YOUR_API_KEY")
+pe = PuntersEdge()
 try:
     pe.best_odds("nrl")
 except AuthenticationError:
@@ -108,14 +108,71 @@ except RateLimitError:
 
 ## Configuration
 
-```python
-pe = PuntersEdge(
-    api_key="YOUR_API_KEY",
-    base_url="https://api.puntersedge.online/v1",  # default
-    timeout=15.0,
-    retries=2,
-)
+You never have to put your key in your code. `PuntersEdge()` finds it for you, checking
+each source **per setting** — so a `base_url` in your file still applies when your key comes
+from the environment:
+
+| | source |
+|---|---|
+| 1 | the `api_key=` argument |
+| 2 | `$PUNTERSEDGE_API_KEY` |
+| 3 | `$PUNTERSEDGE_CONFIG_FILE`, if set — then that file only |
+| 4 | `~/.config/puntersedge/config` (`%APPDATA%\puntersedge\config` on Windows) |
+
+Create the file once:
+
+```bash
+mkdir -p ~/.config/puntersedge
+printf '[puntersedge]\napi_key = pe_...\n' > ~/.config/puntersedge/config
+chmod 600 ~/.config/puntersedge/config
 ```
+
+```ini
+[puntersedge]
+api_key  = pe_...
+base_url = https://api.puntersedge.online/v1
+timeout  = 15
+retries  = 2
+
+[arb]
+bettable_books  = sportsbet, tab, neds
+min_edge_pct    = 0.5
+max_quote_age_s = 120
+```
+
+```python
+pe = PuntersEdge()                      # reads [puntersedge]
+cfg = GateConfig.load()                 # reads [arb] — never sees your key
+print(pe.key_source)                    # "$PUNTERSEDGE_API_KEY" — the source, never the key
+```
+
+If no key is found, the error names every source it tried and what each one reported, so
+"wrong file", "empty variable" and "wrong section" do not all look like a 401.
+
+Explicit arguments still work — `PuntersEdge(api_key="...", timeout=30)` — and override
+everything else.
+
+**A note on the config file.** It is checked before it is read: refused outright if another
+user owns it or can write to it, and warned about if others can read it (`chmod 600` fixes
+that). It holds one secret, your PuntersEdge API key. It has exactly two sections, and any
+other section is a startup error.
+
+## Boundaries
+
+This package **never holds bookmaker credentials, never places bets, and never operates a
+betting account.** It reads odds and computes sizing; you place every bet yourself in your
+own session. There is nowhere in the config file to put a bookmaker login, and attempting
+to add one is a startup error rather than a documented discouragement.
+
+Racing back/lay arbitrage — backing at a bookmaker and laying on the Betfair exchange — is
+**not available to API customers**. `/v1/arb/racing` and `/v1/racing/exchange` return HTTP
+410 on every customer key, because the exchange side is withheld pending a Betfair data
+licence. Use `racing_best_odds()` for cross-book racing value, which needs no exchange.
+
+No profit is claimed or implied. Book-vs-book arbitrage on Australian markets is thin,
+intermittent, and self-limiting — bookmakers restrict accounts that do it. The `arb` tools
+here are instrumentation: they tell you which of the feed's candidates survive scrutiny,
+and why the rest do not.
 
 ## Links
 

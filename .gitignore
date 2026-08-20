@@ -5,6 +5,24 @@ build/
 dist/
 .venv/
 venv/
-.env
 .pytest_cache/
 .DS_Store
+
+# Anything that could hold a live API key. Exact names rather than a glob, because
+# pyproject.toml is tracked and `*.toml` would hide it.
+#
+# Being a dotfile is NOT protection — `git add .` and `git add -A` both stage dotfiles.
+# Note the structural limit of this file: it is not shipped in the wheel, so it protects
+# contributors to THIS repo only. If the SDK ever grows a writer, the writer itself must
+# refuse to write a secret into a directory containing a .git.
+.env
+.env*
+.envrc
+puntersedge.ini
+puntersedge.toml
+puntersedge.cfg
+.puntersedge
+.puntersedge/
+
+# Bet ledgers — these record real positions and should never be committed.
+*.jsonl

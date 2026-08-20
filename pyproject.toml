@@ -38,7 +38,7 @@ dependencies = ["requests>=2.25"]
 Homepage = "https://puntersedge.online/api-platform"
 Documentation = "https://puntersedge.online/developers"
 "API Pricing" = "https://puntersedge.online/api/pricing"
-Repository = "https://github.com/puntersedge/puntersedge-python"
+Repository = "https://github.com/Propertyscout001/puntersedge-python"
 "Get an API key" = "https://puntersedge.online/api-platform#signup"
 
 [tool.setuptools.packages.find]
