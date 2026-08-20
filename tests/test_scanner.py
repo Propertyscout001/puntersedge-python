@@ -122,6 +122,26 @@ def test_budget_reached_mid_enrichment_does_not_pass_unaged_legs():
     assert "NOT AGE-CHECKED" in r.summary()
 
 
+def test_fits_budget_is_a_number_not_a_phrase():
+    """The CLI gates on this. It used to gate on a substring of budget_advice()'s prose —
+    a phrase that string never contained — so the guard silently never fired and a
+    30-second polling loop ran anyway. Gate on the value, never on the sentence."""
+    s = Scanner(Stub(), GateConfig())
+    assert s.fits_budget(30) is False
+    assert s.fits_budget(900) is False
+    assert s.fits_budget(10800) is True
+    assert s.credits_per_month(30) > s.credits_per_month(3600)
+
+
+def test_advice_and_fits_budget_never_disagree():
+    s = Scanner(Stub(), GateConfig())
+    for interval in (30, 60, 300, 900, 3600, 10800, 86400):
+        fits = s.fits_budget(interval)
+        assert ("fits" in s.budget_advice(interval)) is fits, (
+            "prose and gate disagree at %ds" % interval
+        )
+
+
 def test_estimate_and_advice_are_honest_about_the_free_tier():
     s = Scanner(Stub(), GateConfig())
     assert s.estimate_poll_cost(enriched_sports=2) == 5

@@ -181,11 +181,23 @@ class Scanner:
             base += COST_ARB_LINES * len(self.sports)
         return base + enriched_sports * COST_ODDS_PER_MARKET
 
+    def credits_per_month(self, interval_s: float) -> float:
+        """Projected monthly spend at this interval. The NUMBER, so callers can gate on it.
+
+        Exists because the CLI used to decide whether to warn by substring-matching the
+        prose from `budget_advice()` — for a phrase that string never actually contained,
+        so the guard silently never fired and a 30-second polling loop ran anyway. A
+        derived decision must re-read the underlying value, never the sentence about it.
+        """
+        return self.estimate_poll_cost() * (30 * 86400 / max(interval_s, 1))
+
+    def fits_budget(self, interval_s: float, monthly_credits: int = 1500) -> bool:
+        return self.credits_per_month(interval_s) <= monthly_credits
+
     def budget_advice(self, interval_s: float, monthly_credits: int = 1500) -> str:
         """What this configuration costs per month against a plan, in plain words."""
         per_poll = self.estimate_poll_cost()
-        polls = 30 * 86400 / max(interval_s, 1)
-        total = per_poll * polls
+        total = self.credits_per_month(interval_s)
         if total <= monthly_credits:
             return (
                 "~%d credits/month at %.0fs intervals (~%d credits/poll) — fits a "

@@ -219,6 +219,56 @@ Two things keep the bill down automatically: gates that need only the arb payloa
 polling faster than 15 minutes, because that is how often the upstream sports feed refreshes
 — a faster loop buys nothing but spend.
 
+## Command line
+
+```bash
+pip install puntersedge
+
+puntersedge-arb config                          # where your key comes from (never the key)
+puntersedge-arb scan --sports afl,nrl --stake 200
+puntersedge-arb scan --watch 900 --budget 5000 --record
+puntersedge-arb ledger pnl
+```
+
+`scan` prints its credit cost before spending anything, and refuses a `--watch` interval
+faster than the 900s upstream refresh unless you pass `--yes` — a faster loop cannot surface
+anything new, it only spends. Exit codes are distinct (`2` config, `3` credit budget), and
+finding no arbs exits `0`, because an efficient market is not an error.
+
+## The ledger
+
+`--record` writes each sized arb to an append-only JSONL log. It keeps three things apart
+that are easy to conflate and expensive to confuse:
+
+```bash
+puntersedge-arb ledger place  <bet_id> sportsbet "Lions" 50 2.10   # a leg you got on
+puntersedge-arb ledger settle <bet_id> sportsbet 105               # what it returned
+puntersedge-arb ledger pnl
+```
+
+```
+arbitrage (all legs placed) : +12.40 over 8 positions, 1600.00 staked (0.78%)
+UNHEDGED (a leg missed)     : +55.00 over 1 position, 50.00 staked — directional bets, NOT arbitrage
+open                        : 2 positions, 400.00 at risk
+planned, never placed       : 31 — no money moved, excluded from P&L
+```
+
+Three rules it enforces, each of which cost the author of this library real money to learn:
+
+- **A plan is not a bet.** Recording an intention as a placement overstated one production
+  system's conversion by 3.6×. Plans contribute nothing to P&L until you record what
+  actually went on, per leg, at the stake and price you actually got.
+- **A partly-placed arb is a punt.** If one leg is refused you are holding a directional bet
+  you never intended. That is reported on its own line and never added to the arb figure —
+  a naked leg that wins is not evidence the strategy works.
+- **Duplicates collapse on read.** A double-written settlement once moved a published track
+  record. Deduplicating on read rather than on write makes the total immune to any writer
+  bug, including ones not yet written.
+
+Stakes and returns are yours to record — nothing here places a bet or reads a bookmaker
+account. The ledger lives in your XDG state directory at mode `600`, never the working
+directory.
+
 ## Boundaries
 
 This package **never holds bookmaker credentials, never places bets, and never operates a

@@ -34,6 +34,9 @@ classifiers = [
 ]
 dependencies = ["requests>=2.25"]
 
+[project.scripts]
+puntersedge-arb = "puntersedge.arb.cli:main"
+
 [project.urls]
 Homepage = "https://puntersedge.online/api-platform"
 Documentation = "https://puntersedge.online/developers"
