@@ -227,3 +227,55 @@ def test_xdg_config_home_respected(tmp_path):
     got = default_config_path(env={"XDG_CONFIG_HOME": str(tmp_path)})
     assert got == str(tmp_path / "puntersedge" / "config")
 
+
+
+# ── one file, two independent readers ────────────────────────────────────────────────
+
+def test_gateconfig_load_reads_arb_section(tmp_path):
+    from puntersedge.arb import GateConfig, UnknownAge
+
+    p = write_config(
+        tmp_path,
+        "[puntersedge]\napi_key = %s\n\n[arb]\nbettable_books = sportsbet, TAB\n"
+        "min_edge_pct = 0.5\nmax_quote_age_s = 90\nunknown_age = allow\n" % KEY,
+    )
+    cfg = GateConfig.load(env={}, config_file=p)
+    assert cfg.bettable_books == {"sportsbet", "tab"}
+    assert cfg.min_edge_pct == 0.5
+    assert cfg.max_quote_age_s == 90.0
+    assert cfg.unknown_age is UnknownAge.ALLOW
+
+
+def test_gateconfig_env_beats_file_and_pe_alias_still_works(tmp_path):
+    from puntersedge.arb import GateConfig
+
+    p = write_config(tmp_path, "[arb]\nmin_edge_pct = 0.5\n")
+    assert GateConfig.load(
+        env={"PUNTERSEDGE_ARB_MIN_EDGE_PCT": "2.5"}, config_file=p
+    ).min_edge_pct == 2.5
+    # PE_ARB_* shipped in 0.2.0. An unread gate variable does not raise — it reverts the
+    # gate to its default and quietly loosens what the user is willing to bet on.
+    assert GateConfig.load(env={"PE_ARB_MIN_EDGE_PCT": "3.5"}, config_file=p).min_edge_pct == 3.5
+
+
+def test_bad_arb_value_names_the_setting_and_its_source(tmp_path):
+    from puntersedge.arb import GateConfig
+
+    p = write_config(tmp_path, "[arb]\nmin_edge_pct = abc\n")
+    with pytest.raises(ValueError) as ei:
+        GateConfig.load(env={}, config_file=p)
+    assert "min_edge_pct" in str(ei.value)
+    assert str(p) in str(ei.value)      # which of the two possible sources
+
+
+def test_client_never_reads_arb_and_gateconfig_never_reads_the_key(tmp_path):
+    from puntersedge import PuntersEdge
+    from puntersedge.arb import GateConfig
+
+    p = write_config(
+        tmp_path, "[puntersedge]\napi_key = %s\n\n[arb]\nmin_edge_pct = 0.5\n" % KEY
+    )
+    pe = PuntersEdge(env={}, config_file=p)
+    assert not hasattr(pe, "min_edge_pct")
+    cfg = GateConfig.load(env={}, config_file=p)
+    assert KEY not in str(vars(cfg))
