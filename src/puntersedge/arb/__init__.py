@@ -43,6 +43,7 @@ from .gates import (
 )
 from .models import UNKNOWN_AGE, ArbKind, Leg, Opportunity, Verdict
 from .parse import from_lines_payload, from_sports_payload
+from .sizing import LegStake, Sizing, minimum_viable_total, size, theoretical_split
 
 __all__ = [
     # models
@@ -51,6 +52,12 @@ __all__ = [
     "Opportunity",
     "Verdict",
     "UNKNOWN_AGE",
+    # sizing
+    "size",
+    "Sizing",
+    "LegStake",
+    "minimum_viable_total",
+    "theoretical_split",
     # gates
     "GateConfig",
     "UnknownAge",
