@@ -1,8 +1,28 @@
 # Releasing
 
 Publishing is automated by `.github/workflows/publish.yml`, which uploads to PyPI
-when a GitHub Release is published. Authentication uses **PyPI Trusted Publishing**,
-so no API token is stored in this repository, in GitHub secrets, or on any laptop.
+when a GitHub Release is published.
+
+> **Authentication note (2026-08-21).** This currently uses a **PyPI API token** in the
+> `PYPI_API_TOKEN` repository secret. It was moved off Trusted Publishing after three
+> release attempts failed with `invalid-publisher` — the OIDC token was valid and PyPI
+> had no publisher matching its claims. Trusted Publishing is the better end state
+> because it stores no credential anywhere; the steps to set it up are kept below, and
+> `publish.yml` documents the two-line change to switch back.
+
+## Using an API token (current)
+
+1. At [pypi.org](https://pypi.org), signed in as the owner of the `puntersedge`
+   project, go to **Account settings → API tokens → Add API token**. Scope it to
+   the **`puntersedge` project**, not the whole account.
+2. Copy the token (it starts with `pypi-`; it is shown once).
+3. In this repo: **Settings → Secrets and variables → Actions → New repository
+   secret**, named exactly `PYPI_API_TOKEN`.
+
+The workflow fails early with a clear message if the secret is missing or does not
+start with `pypi-`, rather than surfacing an opaque authentication error.
+
+## Setting up Trusted Publishing (preferred, once it works)
 
 ## One-time setup
 
