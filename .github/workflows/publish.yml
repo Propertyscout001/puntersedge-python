@@ -4,8 +4,9 @@ name: Publish to PyPI
 # irreversible — a version number can be yanked but never reused — so this
 # deliberately does NOT fire on every push to main.
 #
-# Authentication uses PyPI Trusted Publishing (OIDC): no API token is stored
-# in this repo or anywhere else. One-time setup is documented in RELEASING.md.
+# Authentication currently uses a PyPI API token held in the PYPI_API_TOKEN repo
+# secret. See the note on the publish job for why, and for how to move back to
+# Trusted Publishing (OIDC), which stores no credential at all.
 
 on:
   release:
@@ -83,14 +84,46 @@ jobs:
       name: pypi
       url: https://pypi.org/project/puntersedge/
 
-    permissions:
-      id-token: write # REQUIRED for Trusted Publishing — do not remove
-
+    # NOTE: this used to authenticate with PyPI Trusted Publishing (OIDC), which stores no
+    # credential anywhere. It was switched to an API token on 2026-08-21 after three
+    # attempts failed with `invalid-publisher: valid token, but no corresponding publisher`
+    # — the token was valid and PyPI simply had no publisher matching these claims:
+    #
+    #     repository_owner  Propertyscout001
+    #     repository        Propertyscout001/puntersedge-python
+    #     workflow_ref      .../.github/workflows/publish.yml@refs/tags/v0.2.0
+    #     environment       pypi
+    #
+    # To go back to Trusted Publishing once that is configured at
+    # pypi.org → the puntersedge project → Manage → Publishing: restore
+    #     permissions:
+    #       id-token: write
+    # and drop the `password:` line from the Publish step. Nothing else changes, and the
+    # stored secret can then be deleted. That is the better end state — a stored token is
+    # a credential that can leak, and OIDC has none.
     steps:
       - uses: actions/download-artifact@v4
         with:
           name: dist
           path: dist/
 
+      # Without this, a missing or misnamed secret surfaces as an opaque authentication
+      # error from the upload step, which reads exactly like the OIDC failure this change
+      # exists to get away from.
+      - name: Check the token secret is present
+        env:
+          TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::error::PYPI_API_TOKEN is not set. Add it under Settings → Secrets and variables → Actions. It must start with 'pypi-'."
+            exit 1
+          fi
+          case "$TOKEN" in
+            pypi-*) echo "token present, correct prefix" ;;
+            *) echo "::error::PYPI_API_TOKEN does not start with 'pypi-' — that is not a PyPI API token."; exit 1 ;;
+          esac
+
       - name: Publish
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
