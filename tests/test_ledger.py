@@ -167,6 +167,7 @@ def test_settlement_for_an_unplaced_leg_is_not_invented_into_profit(led):
 
 # ── file handling ────────────────────────────────────────────────────────────────────
 
+@pytest.mark.skipif(os.name == "nt", reason="POSIX modes are meaningless on Windows")
 def test_ledger_is_created_0600(tmp_path):
     led = Ledger(str(tmp_path / "sub" / "ledger.jsonl"))
     plan(led)
@@ -176,10 +177,13 @@ def test_ledger_is_created_0600(tmp_path):
 
 def test_default_path_is_never_the_working_directory():
     """A ledger in CWD gets committed. It records real positions."""
-    p = default_ledger_path(env={"HOME": "/home/someone"})
+    env = ({"LOCALAPPDATA": r"C:\\Users\\someone\\AppData\\Local"}
+           if os.name == "nt" else {"HOME": "/home/someone"})
+    p = default_ledger_path(env=env)
     assert p is not None
     assert os.path.isabs(p)
-    assert "/.local/state/puntersedge/" in p.replace(os.sep, "/")
+    assert "puntersedge" in p
+    assert os.path.dirname(p) not in (".", os.getcwd())
 
 
 def test_no_home_means_no_default_path_not_a_tilde_directory():

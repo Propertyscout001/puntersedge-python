@@ -96,6 +96,7 @@ def test_missing_explicit_path_is_hard_error(tmp_path):
         resolve_api_key(env={}, config_file=tmp_path / "nope")
 
 
+@pytest.mark.skipif(os.name == "nt", reason="uses the XDG branch")
 def test_missing_default_path_is_not_an_error(tmp_path):
     env = {"XDG_CONFIG_HOME": str(tmp_path / "empty")}
     with pytest.raises(ApiKeyError):  # ApiKeyError, not ConfigError
@@ -118,6 +119,7 @@ def test_malformed_ini_never_echoes_the_offending_text(tmp_path):
     assert str(p) in str(ei.value)
 
 
+@pytest.mark.skipif(os.name == "nt", reason="chmod(0) does not deny reads on Windows")
 def test_unreadable_is_not_treated_as_absent(tmp_path):
     p = write_config(tmp_path, "[puntersedge]\napi_key = %s\n" % KEY, mode=0o000)
     if os.name != "nt" and os.geteuid() == 0:
@@ -223,8 +225,15 @@ def test_home_unset_yields_no_path_not_a_tilde_directory():
     assert default_config_path(env={}) is None
 
 
+@pytest.mark.skipif(os.name == "nt", reason="Windows reads APPDATA, not XDG_CONFIG_HOME")
 def test_xdg_config_home_respected(tmp_path):
     got = default_config_path(env={"XDG_CONFIG_HOME": str(tmp_path)})
+    assert got == str(tmp_path / "puntersedge" / "config")
+
+
+@pytest.mark.skipif(os.name != "nt", reason="the APPDATA branch only runs on Windows")
+def test_appdata_respected_on_windows(tmp_path):
+    got = default_config_path(env={"APPDATA": str(tmp_path)})
     assert got == str(tmp_path / "puntersedge" / "config")
 
 
