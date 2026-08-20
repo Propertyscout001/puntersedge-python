@@ -164,9 +164,17 @@ def test_zero_age_is_fresh_not_unknown():
 
 
 def test_stale_quote_refused():
-    v = evaluate(opp(legs(*GOOD, age=600.0)))
+    # Beyond the 900s default (one upstream poll cycle). 600s was used here until 0.2.1,
+    # when the default moved from 120s — a threshold that rejected 100% of live sports data.
+    v = evaluate(opp(legs(*GOOD, age=1200.0)))
     assert "stale_quote" in v.reasons
     assert "unknown_age" not in v.reasons  # distinct problems, distinct tokens
+
+
+def test_a_price_at_the_measured_production_median_is_not_stale():
+    """572s is the median observed age on the live sports feed. If the default refuses
+    that, the gate rejects everything and reads as a quiet market."""
+    assert evaluate(opp(legs(*GOOD, age=572.0))).ok
 
 
 def test_one_stale_leg_is_enough():

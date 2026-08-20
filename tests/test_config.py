@@ -288,3 +288,17 @@ def test_client_never_reads_arb_and_gateconfig_never_reads_the_key(tmp_path):
     assert not hasattr(pe, "min_edge_pct")
     cfg = GateConfig.load(env={}, config_file=p)
     assert KEY not in str(vars(cfg))
+
+
+def test_docs_do_not_claim_keys_are_pe_prefixed():
+    """Keys are UUIDs — `db/models.py` mints them with `str(uuid.uuid4())`. Shipping
+    `api_key = pe_...` in the error text sent a real user checking a real key against a
+    format that does not exist."""
+    import pathlib
+
+    import puntersedge
+
+    src = pathlib.Path(puntersedge.__file__).parent
+    for py in src.rglob("*.py"):
+        for i, line in enumerate(py.read_text(encoding="utf-8").splitlines(), 1):
+            assert "pe_..." not in line, "%s:%d still documents a pe_ key format" % (py.name, i)

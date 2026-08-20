@@ -289,13 +289,22 @@ class PuntersEdge:
         """List active sports with their keys, titles and groups."""
         return self._get("/sports")
 
-    def odds(self, sport_key: str, markets=None, bookmakers=None, odds_format=None):
-        """Odds for a sport. ``markets`` e.g. "h2h", "spreads", "totals"."""
+    def odds(self, sport_key: str, markets=None, bookmakers=None, odds_format=None,
+             max_age_minutes=None):
+        """Odds for a sport. ``markets`` e.g. "h2h", "spreads", "totals".
+
+        ``max_age_minutes`` excludes bookmaker markets older than that. The API defaults
+        it to 360 and caps it at 1440 — and the default is not harmless: a book older than
+        six hours is dropped from the payload entirely, so a caller reading per-bookmaker
+        ages sees "no age" rather than "an old age". Pass it explicitly when that
+        distinction matters.
+        """
         return self._get(
             f"/sports/{sport_key}/odds",
             markets=markets,
             bookmakers=bookmakers,
             oddsFormat=odds_format,
+            maxAgeMinutes=max_age_minutes,
         )
 
     def odds_history(self, sport_key: str, date_from=None, date_to=None):

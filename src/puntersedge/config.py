@@ -28,7 +28,7 @@ RawConfigParser rather than ConfigParser because a single `%` in an API key rais
 user no hint that their key is fine.
 
     [puntersedge]
-    api_key  = pe_live_...
+    api_key  = 3f8b1c04-5e7a-4d21-9b6e-0a2c8d5f1e93
     base_url = https://api.puntersedge.online/v1
     timeout  = 30
     retries  = 3
@@ -460,8 +460,8 @@ def resolve_api_key(
         "No PuntersEdge API key found. Tried, in order:\n  "
         + "\n  ".join(chain.trace("api_key", env_names=env_names))
         + "\n\nFix either of:\n"
-        "  export %sAPI_KEY=pe_...\n"
-        "  printf '[%s]\\napi_key = pe_...\\n' > %s && chmod 600 %s\n"
+        "  export %sAPI_KEY=<your key>\n"
+        "  printf '[%s]\\napi_key = <your key>\\n' > %s && chmod 600 %s\n"
         "\nFree key (1,500 credits/mo, no credit card):\n  %s"
         % (ENV_PREFIX, SECTION, path, path, SIGNUP_URL)
     )

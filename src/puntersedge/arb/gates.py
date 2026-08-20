@@ -120,11 +120,19 @@ class GateConfig:
     # poll cadence and your books, not a constant. Sports polls every 900s.
     max_edge_pct: float = 8.0
 
-    # Freshness budget in seconds. The sports feed's own `stale` flag trips at 1800s, which
-    # is calibrated to "the poller has stopped", NOT to "this price is still there" — a
-    # 15-minute-old h2h price is entirely capable of being gone. This default is far
-    # tighter than the feed's flag on purpose.
-    max_quote_age_s: float = 120.0
+    # Freshness budget in seconds.
+    #
+    # This was 120s until 0.2.1, carried over from the operator's racing engine, whose feed
+    # refreshes every ~15s. The sports feed refreshes every 900s and its measured median
+    # price age is 572s (production, 2026-08-20), so a 120s budget could never pass anything
+    # — a threshold that rejects 100% of live data is not a strict gate, it is a broken one.
+    #
+    # 900s is one upstream poll cycle: as fresh as this feed is capable of being. Read that
+    # as the feed's ceiling, NOT as a recommendation. A price with a median age of ~9.5
+    # minutes is not a tight arbitrage signal, and no setting here changes that; it is a
+    # property of the data. Tighten it if you want fewer, better candidates, and expect most
+    # polls to return nothing.
+    max_quote_age_s: float = 900.0
 
     unknown_age: UnknownAge = UnknownAge.REJECT
 

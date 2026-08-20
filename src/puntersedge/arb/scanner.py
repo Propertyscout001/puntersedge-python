@@ -55,6 +55,11 @@ COST_ODDS_PER_MARKET = 1
 # The upstream sports poll interval. Polling faster cannot surface anything new.
 UPSTREAM_REFRESH_S = 900
 
+# The widest age window `/v1/sports/{k}/odds` accepts — it returns 422 above this. Asking
+# for the maximum is deliberate: it makes this module's freshness gate the only thing that
+# rejects on age, so `stale_quote` and `unknown_age` mean what they say. See _fetch_odds.
+MAX_ENRICH_AGE_MINUTES = 1440
+
 
 @dataclass
 class PollResult:
@@ -155,6 +160,7 @@ class Scanner:
         lines: bool = False,
         credit_budget: Optional[int] = None,
         min_interval_s: float = UPSTREAM_REFRESH_S,
+        enrich_max_age_minutes: int = MAX_ENRICH_AGE_MINUTES,
     ):
         self.client = client
         self.cfg = cfg or GateConfig()
@@ -163,6 +169,10 @@ class Scanner:
         self.credit_budget = credit_budget
         self.credits_spent = 0
         self.min_interval_s = min_interval_s
+        # Clamped, because the endpoint 422s above 1440 and a rejected enrichment call
+        # would take out the freshness check for a whole sport.
+        self.enrich_max_age_minutes = max(1, min(int(enrich_max_age_minutes),
+                                                 MAX_ENRICH_AGE_MINUTES))
         self._last_poll_at: Optional[float] = None
 
     # ── budget ───────────────────────────────────────────────────────────────────────
@@ -212,6 +222,27 @@ class Scanner:
             (per_poll * 30 * 86400 / monthly_credits) / 60,
         )
 
+    def _fetch_odds(self, sport: str):
+        """Enrichment call, with the age window stated rather than inherited.
+
+        `/v1/sports/{k}/odds` filters out bookmaker markets older than `maxAgeMinutes`,
+        which DEFAULTS TO 360. Letting that default apply silently was a real bug: a book
+        older than six hours was dropped from the payload before its age could be read, so
+        the scanner reported `unknown_age` — "the feed gave me no age" — for a leg whose
+        actual problem was `stale_quote`, "this price is ancient". Two different diagnoses
+        with two different fixes, and the tool named the wrong one.
+
+        Measured against production on 2026-08-20: every arb the server flagged had a leg
+        the odds feed omitted at 360 minutes, so every one was misreported as unknown_age.
+
+        Asking for the widest window the API allows makes THIS module's gate the only thing
+        that rejects on age, which is what makes the two reasons mean what they say. It
+        costs nothing extra — the endpoint is priced per market requested, not per row.
+        """
+        return self.client.odds(
+            sport, markets="h2h", max_age_minutes=self.enrich_max_age_minutes
+        )
+
     # ── the poll ─────────────────────────────────────────────────────────────────────
     def poll(self) -> PollResult:
         started = time.time()
@@ -256,7 +287,7 @@ class Scanner:
         for sport in needed:
             try:
                 self._spend(COST_ODDS_PER_MARKET, "/v1/sports/%s/odds" % sport)
-                ages.update(_ages_from_odds(self.client.odds(sport, markets="h2h")))
+                ages.update(_ages_from_odds(self._fetch_odds(sport)))
                 result.enriched_sports.append(sport)
             except CreditBudgetExceeded:
                 # Deliberately not fatal here: the candidates already enriched are still
