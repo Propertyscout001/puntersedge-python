@@ -86,6 +86,19 @@ def cmd_scan(args) -> int:
 
         ledger = Ledger(args.ledger)
 
+    alerter = None
+    if args.alert or args.alert_console or args.alert_dry_run:
+        from .alerts import load_alerter
+
+        alerter = load_alerter(
+            config_file=args.config_file,
+            dry_run=args.alert_dry_run,
+            console=args.alert_console,
+        )
+        if alerter.notifier.name == "null" and not args.alert_dry_run:
+            print("--alert: no webhook_url in [alerts], so nothing will be delivered. "
+                  "Use --alert-console to print them instead.", file=sys.stderr)
+
     found_any = False
     try:
         while True:
@@ -131,6 +144,18 @@ def cmd_scan(args) -> int:
                 diag = result.diagnosis()
                 if diag:
                     print("  %s" % diag)
+
+            if alerter is not None:
+                import time as _t
+
+                sent = alerter.notify(
+                    result.arbs, _t.time(),
+                    sizer=lambda o: size(o, args.stake, step=args.step),
+                )
+                # Printed every poll, including when it is all zeros. An alerter that has
+                # quietly suppressed everything for an hour is indistinguishable from a
+                # quiet market unless it says so.
+                print("  alerts: %s" % sent.summary())
 
             found_any = found_any or bool(result.arbs)
             if not args.watch:
@@ -257,6 +282,12 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--yes", action="store_true", help="skip the credit-cost confirmation")
     s.add_argument("--record", action="store_true",
                    help="write each sized arb to the ledger as a PLAN (no money moves)")
+    s.add_argument("--alert", action="store_true",
+                   help="send alerts using the [alerts] section of your config")
+    s.add_argument("--alert-console", action="store_true",
+                   help="print alerts instead of sending them anywhere")
+    s.add_argument("--alert-dry-run", action="store_true",
+                   help="run the alert policy without delivering anything")
     s.add_argument("--ledger", help="ledger path (default: XDG state dir)")
     s.add_argument("--json", action="store_true", help="machine-readable output")
     s.set_defaults(func=cmd_scan)

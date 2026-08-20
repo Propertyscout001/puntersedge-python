@@ -154,8 +154,9 @@ everything else.
 
 **A note on the config file.** It is checked before it is read: refused outright if another
 user owns it or can write to it, and warned about if others can read it (`chmod 600` fixes
-that). It holds one secret, your PuntersEdge API key. It has exactly two sections, and any
-other section is a startup error.
+that). It holds your PuntersEdge API key and, if you use alerts, one webhook URL — which is
+also a credential, since anyone holding it can post to your channel. It has exactly three
+sections, and any other section is a startup error.
 
 ## Scanning and stake sizing
 
@@ -268,6 +269,43 @@ Three rules it enforces, each of which cost the author of this library real mone
 Stakes and returns are yours to record — nothing here places a bet or reads a bookmaker
 account. The ledger lives in your XDG state directory at mode `600`, never the working
 directory.
+
+## Alerts
+
+Opt-in, and off unless you configure it:
+
+```ini
+[alerts]
+webhook_url  = https://discord.com/api/webhooks/...
+min_edge_pct = 1.0
+cooldown_s   = 3600
+max_per_hour = 20
+```
+
+```bash
+puntersedge-arb scan --watch 900 --alert
+puntersedge-arb scan --alert-console     # print them instead of sending
+puntersedge-arb scan --alert-dry-run     # exercise the throttle, deliver nothing
+```
+
+Your webhook URL is a credential — anyone holding it can post to your channel — so it lives
+in the config file beside your API key, is wrapped so it cannot be printed by accident, and
+never appears in a message, an error, or a log line. Errors quote the host and the status
+code, never the URL.
+
+Two things this gets right that are easy to get wrong:
+
+- **Deduplication never compares the message text.** An alert's identity is the event and its
+  legs — no odds, no edge, no age, no timestamp. Put any moving number in the compared text
+  and "has this changed?" is true on every poll, so the throttle never engages. That failure
+  sent one system in this estate ~24 identical emails a day for three days, with a correct,
+  tested, 12-hourly throttle in place the whole time.
+- **Quota counts what was sent, not what was attempted.** A suppressed alert, a failed
+  webhook and a dry run all consume nothing and start no cooldown. Recording before sending
+  makes a rejected call extend its own lockout, so the window can never be waited out.
+
+Every poll prints the alert line even when it is all zeros — an alerter that has quietly
+suppressed everything for an hour looks exactly like a quiet market otherwise.
 
 ## Boundaries
 

@@ -40,8 +40,14 @@ user no hint that their key is fine.
     max_quote_age_s = 120
     unknown_age     = reject
 
-One file, two independent readers: `PuntersEdge` never reads `[arb]`, and `GateConfig` never
-reads `api_key`.
+    [alerts]
+    webhook_url  = https://discord.com/api/webhooks/...
+    min_edge_pct = 1.0
+    cooldown_s   = 3600
+    max_per_hour = 20
+
+One file, three independent readers: `PuntersEdge` reads only `[puntersedge]`, `GateConfig`
+only `[arb]`, and the alerter only `[alerts]`. None of them can see another's secrets.
 """
 from __future__ import annotations
 
@@ -56,7 +62,14 @@ from .exceptions import ApiKeyError, ConfigError
 
 SECTION = "puntersedge"
 ARB_SECTION = "arb"
-ALLOWED_SECTIONS = frozenset({SECTION, ARB_SECTION})
+# `[alerts]` holds one more credential — an incoming-webhook URL, which is a bearer token in
+# URL form. Adding it widens the allowlist by exactly one named section and does NOT weaken
+# the boundary: the book/login tripwire below still applies to every section and option, so
+# `[sportsbet]` and `password =` remain startup errors wherever they appear. The distinction
+# is not "is it secret" but "is it a bookmaker account" — a webhook to your own chat channel
+# is not one, and nothing in this package can bet through it.
+ALERT_SECTION = "alerts"
+ALLOWED_SECTIONS = frozenset({SECTION, ARB_SECTION, ALERT_SECTION})
 ENV_PREFIX = "PUNTERSEDGE_"
 CONFIG_FILE_ENV = ENV_PREFIX + "CONFIG_FILE"
 
@@ -263,8 +276,9 @@ def load_config_file(path: PathLike, *, required: bool) -> Optional[Dict[str, Di
         for name in sorted(unknown):
             _check_boundary(path, name)
         raise ConfigError(
-            "%s: unknown section(s) %s. A puntersedge config has exactly two sections: "
-            "[%s] and [%s]." % (path, sorted(unknown), SECTION, ARB_SECTION)
+            "%s: unknown section(s) %s. A puntersedge config has exactly three sections: "
+            "[%s], [%s] and [%s]." % (path, sorted(unknown), SECTION, ARB_SECTION,
+                                      ALERT_SECTION)
         )
 
     out: Dict[str, Dict[str, str]] = {}

@@ -32,6 +32,16 @@ Nothing here places a bet, holds a credential, or touches a bookmaker account.
 """
 from __future__ import annotations
 
+from .alerts import (
+    Alerter,
+    AlertPolicy,
+    AlertResult,
+    ConsoleNotifier,
+    NullNotifier,
+    WebhookNotifier,
+    alert_identity,
+    load_alerter,
+)
 from .gates import (
     REASON_CLASS,
     GateConfig,
@@ -54,6 +64,15 @@ __all__ = [
     "Opportunity",
     "Verdict",
     "UNKNOWN_AGE",
+    # alerts
+    "Alerter",
+    "AlertPolicy",
+    "AlertResult",
+    "ConsoleNotifier",
+    "NullNotifier",
+    "WebhookNotifier",
+    "alert_identity",
+    "load_alerter",
     # ledger
     "Ledger",
     "Position",
