@@ -195,7 +195,7 @@ def test_no_home_means_no_default_path_not_a_tilde_directory():
 def test_a_corrupt_line_does_not_destroy_the_history(led):
     bid = plan(led)
     led.record_placement(bid, "sportsbet", "sel0", 50.0, 2.10, when=T0)
-    with open(led.path, "a") as fh:
+    with open(led.path, "a", encoding="utf-8") as fh:
         fh.write("{not json at all\n")
     led.record_placement(bid, "tab", "sel1", 50.0, 2.10, when=T0)
     pos = {x.bet_id: x for x in led.positions()}[bid]
@@ -212,7 +212,7 @@ def test_no_secret_shaped_field_is_ever_written(led):
     bid = plan(led)
     led.record_placement(bid, "sportsbet", "sel0", 50.0, 2.10, when=T0)
     led.record_note(bid, "manual check", when=T0)
-    text = open(led.path).read().lower()
+    text = open(led.path, encoding="utf-8").read().lower()
     for banned in ("api_key", "apikey", "x-api-key", "password", "token", "environ",
                    "secret", "authorization"):
         assert banned not in text, "ledger wrote a %r field" % banned

@@ -240,7 +240,7 @@ def test_rendered_alert_contains_no_secret_and_says_who_places_the_bet():
 
 def test_alerts_are_opt_in_and_default_to_going_nowhere(tmp_path):
     p = tmp_path / "config"
-    p.write_text("[puntersedge]\napi_key = k\n")
+    p.write_text("[puntersedge]\napi_key = k\n", encoding="utf-8")
     p.chmod(0o600)
     a = load_alerter(env={}, config_file=str(p))
     assert a.notifier.name == "null", "alerts delivered somewhere without being configured"
@@ -250,7 +250,8 @@ def test_alerts_section_is_read(tmp_path):
     p = tmp_path / "config"
     p.write_text(
         "[puntersedge]\napi_key = k\n\n[alerts]\nwebhook_url = %s\n"
-        "min_edge_pct = 1.5\ncooldown_s = 900\nmax_per_hour = 5\n" % HOOK
+        "min_edge_pct = 1.5\ncooldown_s = 900\nmax_per_hour = 5\n" % HOOK,
+        encoding="utf-8",
     )
     p.chmod(0o600)
     a = load_alerter(env={}, config_file=str(p))
@@ -262,7 +263,7 @@ def test_alerts_section_is_read(tmp_path):
 
 def test_alerter_never_reads_the_api_key(tmp_path):
     p = tmp_path / "config"
-    p.write_text("[puntersedge]\napi_key = pe_live_NOPE\n\n[alerts]\ncooldown_s = 60\n")
+    p.write_text("[puntersedge]\napi_key = pe_live_NOPE\n\n[alerts]\ncooldown_s = 60\n", encoding="utf-8")
     p.chmod(0o600)
     a = load_alerter(env={}, config_file=str(p))
     assert "pe_live_NOPE" not in repr(a.__dict__)
@@ -273,7 +274,7 @@ def test_a_bookmaker_section_is_still_refused_with_alerts_allowed(tmp_path):
     from puntersedge.config import load_config_file
 
     p = tmp_path / "config"
-    p.write_text("[alerts]\nwebhook_url = %s\n\n[sportsbet]\nusername = bob\n" % HOOK)
+    p.write_text("[alerts]\nwebhook_url = %s\n\n[sportsbet]\nusername = bob\n" % HOOK, encoding="utf-8")
     p.chmod(0o600)
     with pytest.raises(ConfigError, match="never stores bookmaker logins"):
         load_config_file(p, required=True)
@@ -283,7 +284,7 @@ def test_a_login_field_inside_alerts_is_refused(tmp_path):
     from puntersedge.config import load_config_file
 
     p = tmp_path / "config"
-    p.write_text("[alerts]\nwebhook_url = %s\npassword = hunter2\n" % HOOK)
+    p.write_text("[alerts]\nwebhook_url = %s\npassword = hunter2\n" % HOOK, encoding="utf-8")
     p.chmod(0o600)
     with pytest.raises(ConfigError, match="never stores bookmaker logins"):
         load_config_file(p, required=True)
@@ -291,7 +292,7 @@ def test_a_login_field_inside_alerts_is_refused(tmp_path):
 
 def test_bad_alert_setting_names_the_setting(tmp_path):
     p = tmp_path / "config"
-    p.write_text("[alerts]\ncooldown_s = soon\n")
+    p.write_text("[alerts]\ncooldown_s = soon\n", encoding="utf-8")
     p.chmod(0o600)
     with pytest.raises(ConfigError, match="cooldown_s"):
         load_alerter(env={}, config_file=str(p))

@@ -20,7 +20,7 @@ KEY = "pe_live_TESTKEY"
 
 def write_config(tmp_path, text, mode=0o600, name="config"):
     p = tmp_path / name
-    p.write_text(text)
+    p.write_text(text, encoding="utf-8")
     os.chmod(p, mode)
     return p
 
@@ -200,7 +200,7 @@ def test_no_symbol_in_the_package_is_named_credential():
 
     root = pathlib.Path(puntersedge.__file__).parent
     for py in root.rglob("*.py"):
-        text = py.read_text()
+        text = py.read_text(encoding="utf-8")
         for line in text.splitlines():
             if line.lstrip().startswith(("def ", "class ")):
                 assert "credential" not in line.lower(), "%s: %s" % (py.name, line)
