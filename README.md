@@ -12,12 +12,12 @@ Official Python client for the [**PuntersEdge Australian Sports Odds API**](http
 
 ## Why this API
 
-Most "sports odds API" products have thin Australian coverage. PuntersEdge is **Australian-first**: Sportsbet, TAB, Neds, Ladbrokes, Unibet, Betfair, PointsBet, Betr, BetRight, PlayUp and TABtouch, across AFL, NRL, NBA, tennis, EPL, cricket, plus **horse / greyhound / harness racing**.
+Most "sports odds API" products have thin Australian coverage. PuntersEdge is **Australian-first**: Sportsbet, TAB, Neds, Ladbrokes, Unibet, PointsBet, Betr, BetRight, NextBet, Palmerbet and TABtouch — eleven Australian books on racing, six of them on sports — across AFL, NRL, NBA, WNBA, tennis and cricket, plus **horse / greyhound / harness racing**.
 
 - 🟢 **Live bookmaker odds** — one REST endpoint, 11 AU books
 - 🏇 **Racing next-to-go** — runners + prices for horse, greyhound, harness
 - ⚖️ **Best-odds comparison** — best price per selection across every book
-- 🎯 **Arbitrage, pre-computed** — surebets, spreads/totals line arbs, and racing back-vs-Betfair-lay edges with stakes + guaranteed profit already calculated
+- 🎯 **Arbitrage, pre-computed** — surebets and spreads/totals line arbs with stakes + guaranteed profit already calculated. Racing back/lay against the exchange is withheld pending a Betfair data licence; use `racing_best_odds()` for cross-book racing value
 - 📊 **Value & promo boards** — daily plays ranked by EV per $1
 - 🔌 **Predictable JSON** — simple `X-API-Key` auth
 
@@ -68,7 +68,7 @@ for arb in pe.arb_sports(min_profit_pct=0):
 Racing back/lay arb against the Betfair exchange:
 
 ```python
-edges = pe.arb_racing(categories="horse", min_edge_pct=1, verify=1)
+races = pe.racing_best_odds(categories="horse", num_races=5)
 ```
 
 ## Endpoints covered
@@ -81,7 +81,8 @@ edges = pe.arb_racing(categories="horse", min_edge_pct=1, verify=1)
 | `racing_next_to_go(categories=...)` | Next races, runners + prices |
 | `racing_events(hours_ahead=...)` | Upcoming race list |
 | `arb_sports(min_profit_pct=...)` | Surebets + best-odds overlays |
-| `arb_racing(categories=...)` | Back/lay arb vs Betfair |
+| `racing_best_odds(categories=...)` | Best win/place/tote per runner across the AU books |
+| `arb_racing(...)` | **Withheld** — 410 pending a Betfair data licence |
 | `arb_lines(sport_key=...)` | Spreads/totals line arbs |
 | `arb_best_prices(sport_key=...)` | Best + worst + average per book |
 | `value_promos(book=...)` | EV-ranked promo board |

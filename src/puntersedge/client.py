@@ -163,13 +163,34 @@ class PuntersEdge:
         """Upcoming races within an ``hours_ahead`` window."""
         return self._get("/racing/events", hours_ahead=hours_ahead, categories=categories)
 
+    def racing_best_odds(self, categories=None, num_races=None, bookmakers=None, country=None):
+        """Best win, place and tote price per runner across the AU books. 3 credits.
+
+        ``market_percentage`` under 100 means the best prices across books beat the field —
+        cross-book value without needing an exchange. This is the endpoint to use instead of
+        :meth:`arb_racing`, which is withheld from customer keys.
+        """
+        return self._get(
+            "/racing/best-odds", categories=categories, num_races=num_races,
+            bookmakers=bookmakers, country=country
+        )
+
     # ── arbitrage & value ────────────────────────────────────────────────
     def arb_sports(self, sport_key=None, min_profit_pct=None):
         """Scan sports markets for arbitrage + best-odds overlays."""
         return self._get("/arb/sports", sport_key=sport_key, min_profit_pct=min_profit_pct)
 
     def arb_racing(self, categories=None, min_edge_pct=None, verify=None):
-        """Racing back/lay arb: fixed-odds back vs Betfair exchange lay."""
+        """WITHHELD — raises ``PuntersEdgeError`` (HTTP 410) on every customer key.
+
+        Racing back/lay arb needs the Betfair exchange lay side, which is withheld pending a
+        Betfair Exchange data licence. This is not a temporary outage and retrying will not
+        help. Use :meth:`racing_best_odds` instead: ``market_percentage`` under 100 is
+        cross-book value that needs no exchange.
+
+        Kept rather than removed because it ships in a published release and deleting it
+        would break an import.
+        """
         return self._get(
             "/arb/racing", categories=categories, min_edge_pct=min_edge_pct, verify=verify
         )

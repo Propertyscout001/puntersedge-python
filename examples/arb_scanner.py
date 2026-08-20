@@ -20,6 +20,11 @@ for arb in pe.arb_sports(min_profit_pct=0):
 if not found:
     print("  No live sports arbs right now (efficient markets) — try again near game time.")
 
-print("\n== Racing back/lay vs Betfair ==")
-for edge in pe.arb_racing(categories="horse", min_edge_pct=1, verify=1):
-    print(f"  {edge}")
+# arb_racing() is withheld (410) on every customer key — the Betfair lay side needs a data
+# licence — so this script used to die here. racing_best_odds() is the live equivalent:
+# market_percentage under 100 is cross-book value that needs no exchange.
+print("\n== Racing cross-book value (market_percentage < 100) ==")
+for race in pe.racing_best_odds(categories="horse", num_races=5):
+    mp = race.get("market_percentage")
+    flag = "  <-- beats the field" if mp is not None and mp < 100 else ""
+    print(f"  {race.get('venue')} R{race.get('race_number')}: market {mp}%{flag}")
