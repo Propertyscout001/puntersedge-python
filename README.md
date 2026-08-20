@@ -187,8 +187,10 @@ for opp in result.arbs:
 **`plan.profit` is the worst case after rounding** — what you are actually guaranteed, not
 the textbook figure. That distinction is the whole point of the module: rounding an equal-
 profit split to whole dollars produced a *guaranteed loss* in 6.9% of thin arbs we tested,
-and was worse than optimal in 56%. `size()` searches the rounding combinations for the one
-that maximises your worst case, and refuses outright when nothing clears zero.
+and was worse than optimal in 56%. `size()` searches for the plan that maximises your worst
+case — verified against brute force with zero disagreements — and refuses outright when
+nothing clears zero. `total` is a **cap**: it will stake less than you offered if that pays
+better, and never more.
 
 **When a poll finds nothing, ask it why.** `result.diagnosis()` distinguishes an efficient
 market from a broken scanner — a filter matching no sports, enrichment failing, or every

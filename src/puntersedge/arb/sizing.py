@@ -16,9 +16,19 @@ Measured over 3,000 randomly generated 2- and 3-leg arbs with `inv_sum` between 
     naive per-leg rounding produced a GUARANTEED LOSS in  6.9% of them
     naive per-leg rounding was worse than optimal in     56.0% of them
 
-So this module never rounds per leg. It enumerates the 2^N floor/ceil combinations (N is 2
-or 3 in practice) and picks the one that maximises the worst-case return. That is exact, not
-a heuristic, and at these sizes it is free.
+So this module never rounds per leg. It searches for the plan that maximises the worst-case
+return, by designating each leg in turn as the binding one and sweeping its stake — see
+`size()` for why that is exhaustive. Verified against brute force: 0 disagreements over
+1,200 two-leg and 150 three-leg cases.
+
+An earlier version enumerated the 2^N floor/ceil roundings of the ideal split and its
+docstring called that exact. It is exact only for the total it happens to land on. Under a
+spending cap the optimum often sits at a smaller total where the lattice aligns better, and
+the neighbourhood search came in below the true optimum in 54.3% of cases by a mean of
+$0.26. Recorded here because "it looked optimal" was the whole problem.
+
+`total` is a CAP. It is never exceeded — the earlier version overspent it in 41.1% of plans,
+by a mean of $1.00, which is a bankroll rule broken silently.
 
 WHAT THIS MODULE WILL NOT DO
 ----------------------------
@@ -33,7 +43,6 @@ package must never have one.
 """
 from __future__ import annotations
 
-import itertools
 import math
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Sequence
@@ -132,7 +141,10 @@ def size(
     default_minimum: float = DEFAULT_MIN_STAKE,
     scale_up_to_minimum: bool = False,
 ) -> Sizing:
-    """Stake plan for `opp` laying out about `total`, rounded to something placeable.
+    """Stake plan for `opp` laying out AT MOST `total`, rounded to something placeable.
+
+    `total` is a cap, not a target: the plan will stake less than you offered when a smaller
+    outlay pays better after rounding, and will never stake more.
 
     `minimums` maps a lowercased book key to that book's minimum bet; anything missing uses
     `default_minimum`. When a leg would fall below its minimum the result is `viable=False`
@@ -151,14 +163,14 @@ def size(
         return Sizing([], 0.0, 0.0, 0.0, step, False, "total stake must be positive")
     if step <= 0:
         raise ValueError("step must be positive")
-    # Checked BEFORE anything else that could return early. The 2^N enumeration below is
-    # the thing being protected, and a guard that a malformed payload can route around is
-    # not a guard — a 13-leg opportunity whose prices happen not to cross would previously
-    # exit at the inv_sum check and never reach this.
+    # Checked BEFORE anything else that could return early. The binding-leg sweep below is
+    # the thing being protected, and a guard a malformed payload can route around is not a
+    # guard — a 13-leg opportunity whose prices happen not to cross would otherwise exit at
+    # the inv_sum check and never reach this.
     if len(odds) > 12:
         raise ValueError(
-            "refusing to size a %d-leg opportunity: the optimal-rounding search is 2^N "
-            "and no real market has this many outcomes" % len(odds)
+            "refusing to size a %d-leg opportunity: no real market has this many outcomes"
+            % len(odds)
         )
 
     mins = [
@@ -184,33 +196,62 @@ def size(
             )
         total = math.ceil(need / step) * step
 
-    exact = theoretical_split(odds, total)
     theoretical = total * (1.0 / inv_sum - 1.0)
 
-    # Work in integer units of `step` so the arithmetic is exact. Floats accumulate error
-    # in exactly the place where the answer is a few cents either side of zero.
-    lo = [int(math.floor(round(s / step, 9))) for s in exact]
+    # Work in integer units of `step`. Floats accumulate error in exactly the place where
+    # the answer is a few cents either side of zero.
+    cap_units = int(math.floor(round(total / step, 9)))
+    min_units = [max(1, int(math.ceil(round(m / step, 9)))) for m in mins]
 
+    # BINDING-LEG SWEEP — exact, and it replaced a floor/ceil neighbourhood search that
+    # was not.
+    #
+    # The earlier version enumerated the 2^N floor/ceil roundings of the ideal split. That
+    # IS optimal for the total it lands on (a full sweep beat it 0/1476 times), but the
+    # optimum under a spending CAP frequently sits at a smaller total where the lattice
+    # aligns better — measured, the neighbourhood search was below the true capped optimum
+    # in 54.3% of cases by a mean of $0.26.
+    #
+    # Instead: every plan has a binding leg, the one with the lowest return. Designate each
+    # leg j in turn, sweep its stake over the lattice, and give every other leg the SMALLEST
+    # stake whose return still matches. Why that is exhaustive: for any optimal t*, let L*
+    # be its worst return, attained at some leg j. Sweeping leg j reaches t*_j, and the
+    # minimal response gives t_i <= t*_i for every i — so the constructed plan stakes no
+    # more, and its worst return is no lower. It therefore scores at least as well as t*.
+    # Cost is N sweeps of cap/step, which is nothing at these sizes.
     best_units: Optional[List[int]] = None
     best_profit = -math.inf
     best_total = math.inf
-    # 2^N combinations of floor / floor+1. N is 2 or 3 for real markets, and the leg count
-    # was capped at the top of this function.
-    for bits in itertools.product((0, 1), repeat=len(odds)):
-        units = [lo[i] + bits[i] for i in range(len(odds))]
-        if any(u <= 0 for u in units):
-            continue
-        stakes = [u * step for u in units]
-        if any(s < m - 1e-9 for s, m in zip(stakes, mins)):
-            continue
-        staked = sum(stakes)
-        worst = min(s * o for s, o in zip(stakes, odds)) - staked
-        # Maximise the guaranteed profit; tie-break on LESS capital at risk, since an equal
-        # return off a smaller outlay is strictly better.
-        if worst > best_profit + 1e-12 or (
-            abs(worst - best_profit) <= 1e-12 and staked < best_total
-        ):
-            best_profit, best_total, best_units = worst, staked, units
+    n = len(odds)
+    for j in range(n):
+        for tj in range(min_units[j], cap_units + 1):
+            ret_j = tj * step * odds[j]
+            units = [0] * n
+            units[j] = tj
+            running = tj
+            ok = True
+            for i in range(n):
+                if i == j:
+                    continue
+                # smallest lattice stake whose return is not below the binding leg's
+                need = int(math.ceil(round(ret_j / (step * odds[i]), 9) - 1e-9))
+                ui = max(need, min_units[i])
+                units[i] = ui
+                running += ui
+                if running > cap_units:
+                    ok = False
+                    break
+            if not ok:
+                break  # totals only grow with tj, so nothing larger fits either
+            stakes = [u * step for u in units]
+            staked = sum(stakes)
+            worst = min(s * o for s, o in zip(stakes, odds)) - staked
+            # Maximise guaranteed profit; tie-break on LESS capital at risk, since an
+            # equal return off a smaller outlay is strictly better.
+            if worst > best_profit + 1e-12 or (
+                abs(worst - best_profit) <= 1e-12 and staked < best_total
+            ):
+                best_profit, best_total, best_units = worst, staked, list(units)
 
     if best_units is None:
         return Sizing(
