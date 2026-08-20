@@ -167,6 +167,7 @@ def test_settlement_for_an_unplaced_leg_is_not_invented_into_profit(led):
 
 # ── file handling ────────────────────────────────────────────────────────────────────
 
+@pytest.mark.skipif(os.name == "nt", reason="POSIX modes are meaningless on Windows")
 def test_ledger_is_created_0600(tmp_path):
     led = Ledger(str(tmp_path / "sub" / "ledger.jsonl"))
     plan(led)
@@ -176,10 +177,13 @@ def test_ledger_is_created_0600(tmp_path):
 
 def test_default_path_is_never_the_working_directory():
     """A ledger in CWD gets committed. It records real positions."""
-    p = default_ledger_path(env={"HOME": "/home/someone"})
+    env = ({"LOCALAPPDATA": r"C:\\Users\\someone\\AppData\\Local"}
+           if os.name == "nt" else {"HOME": "/home/someone"})
+    p = default_ledger_path(env=env)
     assert p is not None
     assert os.path.isabs(p)
-    assert "/.local/state/puntersedge/" in p.replace(os.sep, "/")
+    assert "puntersedge" in p
+    assert os.path.dirname(p) not in (".", os.getcwd())
 
 
 def test_no_home_means_no_default_path_not_a_tilde_directory():
@@ -191,7 +195,7 @@ def test_no_home_means_no_default_path_not_a_tilde_directory():
 def test_a_corrupt_line_does_not_destroy_the_history(led):
     bid = plan(led)
     led.record_placement(bid, "sportsbet", "sel0", 50.0, 2.10, when=T0)
-    with open(led.path, "a") as fh:
+    with open(led.path, "a", encoding="utf-8") as fh:
         fh.write("{not json at all\n")
     led.record_placement(bid, "tab", "sel1", 50.0, 2.10, when=T0)
     pos = {x.bet_id: x for x in led.positions()}[bid]
@@ -208,7 +212,7 @@ def test_no_secret_shaped_field_is_ever_written(led):
     bid = plan(led)
     led.record_placement(bid, "sportsbet", "sel0", 50.0, 2.10, when=T0)
     led.record_note(bid, "manual check", when=T0)
-    text = open(led.path).read().lower()
+    text = open(led.path, encoding="utf-8").read().lower()
     for banned in ("api_key", "apikey", "x-api-key", "password", "token", "environ",
                    "secret", "authorization"):
         assert banned not in text, "ledger wrote a %r field" % banned

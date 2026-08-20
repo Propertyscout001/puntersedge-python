@@ -13,7 +13,7 @@ KEY = "pe_live_CLI_SENTINEL"
 @pytest.fixture
 def cfg(tmp_path):
     p = tmp_path / "config"
-    p.write_text("[puntersedge]\napi_key = %s\n" % KEY)
+    p.write_text("[puntersedge]\napi_key = %s\n" % KEY, encoding="utf-8")
     p.chmod(0o600)
     return str(p)
 
@@ -44,7 +44,7 @@ def test_config_reports_the_source_never_the_key(cfg, capsys, monkeypatch):
 def test_config_without_a_key_fails_with_the_trace(tmp_path, capsys, monkeypatch):
     monkeypatch.delenv("PUNTERSEDGE_API_KEY", raising=False)
     empty = tmp_path / "empty"
-    empty.write_text("[arb]\nmin_edge_pct = 1\n")
+    empty.write_text("[arb]\nmin_edge_pct = 1\n", encoding="utf-8")
     empty.chmod(0o600)
     rc = main(["--config-file", str(empty), "config"])
     out = capsys.readouterr().out
