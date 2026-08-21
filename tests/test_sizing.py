@@ -1,9 +1,10 @@
 """Stake sizing, and the rounding that turns a real arb into a loss.
 
 The headline test is `test_never_ships_a_losing_plan`. It is a property test over thousands
-of generated arbs rather than a handful of cases, because the failure is arithmetic and
-rare-ish (6.9% of thin arbs at whole-dollar stakes) — exactly the shape that slips past
-example-based tests.
+of generated arbs rather than a handful of cases, because the failure is arithmetic and its
+rate depends on the stake cap — from ~85% of thin arbs at a $10 cap down to ~4.5% at $200,
+whole-dollar stakes. That is exactly the shape that slips past example-based tests: pick a
+generous cap for your fixtures and it looks like it never happens.
 """
 from __future__ import annotations
 
@@ -64,7 +65,9 @@ def test_minimum_viable_total_is_the_binding_leg():
 def test_never_ships_a_losing_plan():
     """A viable plan must never have a non-positive worst case.
 
-    Measured on the same generator: naive per-leg rounding loses money on ~6.9% of these.
+    Measured on the same generator, naive per-leg rounding leaves a non-positive worst case
+    on a share of these that depends on the cap — ~18.6% at $60, ~4.5% at $200. Never zero,
+    which is why this is a property test.
     """
     random.seed(11)
     viable = losing = naive_losing = 0
@@ -218,9 +221,14 @@ def test_rounding_that_kills_the_edge_is_refused_not_returned():
         if not (0.990 < inv < 0.9999):
             continue
         s = size(opp(odds), 10, step=1.0)
-        if not s.viable and "guaranteed loss" in s.reason:
+        if not s.viable and "no longer a locked position" in s.reason:
             found = True
             assert s.profit <= 0
+            assert "guaranteed" not in s.reason, (
+                "the refusal must not claim a guaranteed loss — for a genuine arb the "
+                "inverse-odds-weighted branch profits sum to T(1-inv_sum) > 0, so at "
+                "least one branch always pays"
+            )
             break
     assert found, "never generated a case where rounding killed the edge"
 

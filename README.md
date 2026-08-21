@@ -186,12 +186,36 @@ for opp in result.arbs:
 ```
 
 **`plan.profit` is the worst case after rounding** — what you are actually guaranteed, not
-the textbook figure. That distinction is the whole point of the module: rounding an equal-
-profit split to whole dollars produced a *guaranteed loss* in 6.9% of thin arbs we tested,
-and was worse than optimal in 56%. `size()` searches for the plan that maximises your worst
-case — verified against brute force with zero disagreements — and refuses outright when
-nothing clears zero. `total` is a **cap**: it will stake less than you offered if that pays
-better, and never more.
+the textbook figure. That distinction is the whole point of the module. On thin arbs, rounding
+an equal-profit split to whole dollars can push the worst outcome to zero or below, and at that
+point the position is no longer locked: it is a directional bet you did not choose.
+
+Be precise about what that does and does not mean, because an earlier version of this README
+was not. It is **not** a guaranteed loss, and cannot be — for any genuine arb the branch profits
+weighted by `1/oᵢ` sum to `T(1−S) > 0`, so at least one branch always pays. Rounding destroys
+the guarantee, not the money.
+
+How often it bites depends on your **stake cap**, because the whole effect is the size of the
+rounding step relative to the edge. On 3,000 generated 2- and 3-leg arbs with `inv_sum` between
+0.94 and 0.999, at whole-dollar stakes, naive per-leg rounding leaves a non-positive worst case
+in:
+
+| cap | $10 | $20 | $40 | $60 | $100 | $200 |
+|---|---|---|---|---|---|---|
+| rate | 84.8% | 55.4% | 31.3% | 18.6% | 11.1% | 4.5% |
+
+*(This README quoted a flat **6.9%** until 2026-08-21. That figure is real — it corresponds to a
+cap of about $150 — but quoting it without the cap made a property of your stake size look like
+a property of arbitrage. The companion "worse than optimal in 56%" does not reproduce at any cap;
+the same sweep gives 68–91%. And the word it used was "guaranteed loss", which is the part that
+was actually wrong.)*
+
+`size()` searches for the plan that maximises your worst case and refuses outright when nothing
+clears zero. `tests/test_sizing.py` checks it against exhaustive brute force over the whole
+lattice for both two- and three-leg markets. For two legs it is also exact by construction: at a
+fixed total one branch rises in the anchor stake while the other falls, so the max-min is
+unimodal and the optimum is at floor or ceil of the crossing. `total` is a **cap**: it will
+stake less than you offered if that pays better, and never more.
 
 **When a poll finds nothing, ask it why.** `result.diagnosis()` distinguishes an efficient
 market from a broken scanner — a filter matching no sports, enrichment failing, or every
@@ -199,18 +223,27 @@ candidate priced at books you don't hold. A count on its own cannot.
 
 ### Credits — read this before you set an interval
 
-A poll costs 3 credits, plus 1 per sport that needs a freshness check. Prices ages are not
-in the arb response, so they have to be fetched separately.
+A poll costs **3 credits per sport in your list**, plus 1 more per sport that needs a freshness
+check — price ages are not in the arb response, so they have to be fetched separately. A
+two-sport scan is `3×2 + 1 = 7` credits. **The bill scales with the length of `sports=`, not
+just with your interval**, which is the part that surprises people.
 
-| interval | credits/month | vs free tier (1,500) |
-|---|---|---|
-| 60s | ~259,000 | 173× over |
-| 5 min | ~52,000 | 35× over |
-| 15 min | ~17,000 | 12× over |
-| 1 hour | ~4,300 | 3× over |
-| 3 hours | ~1,400 | fits |
+| interval | 1 sport (4/poll) | 2 sports (7/poll) | 3 sports (10/poll) |
+|---|---|---|---|
+| 60s | 172,800 | 302,400 | 432,000 |
+| 5 min | 34,560 | 60,480 | 86,400 |
+| 15 min | 11,520 | 20,160 | 28,800 |
+| 1 hour | 2,880 | 5,040 | 7,200 |
+| 3 hours | **960 — fits** | 1,680 | 2,400 |
 
-**The free tier cannot run a live scanner.** That is arithmetic, not a limitation we chose.
+Against the free tier's 1,500 credits/month, **exactly one cell fits**: a single sport polled
+three-hourly. Everything else is over — a 15-minute two-sport loop by 13×.
+
+*(Until 2026-08-21 this table assumed a flat 3 credits per poll and understated every figure,
+by roughly 2× at three sports. `estimate_poll_cost()` was right the whole time; the table was
+not.)*
+
+**The free tier cannot run a live scanner.** That is arithmetic, not a limitation I chose.
 A useful sports scanner wants Starter or above. `scanner.budget_advice(interval)` prints the
 number for your configuration, and `credit_budget=` makes the scanner refuse to exceed a cap
 rather than silently draining your month.

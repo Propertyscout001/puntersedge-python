@@ -8,13 +8,30 @@ WHY ROUNDING IS THE WHOLE PROBLEM
 The equal-profit split almost never lands on whole units. Round each leg independently and
 two things change at once: the total you stake, and the return on each leg. The returns are
 no longer equal, so your profit becomes the WORST leg — and for a thin arb that can be
-negative. You have then placed two bets that are guaranteed, between them, to lose.
+negative. At that point the position is no longer locked: it is a directional bet on the
+branch that pays, and you did not choose it.
 
-Measured over 3,000 randomly generated 2- and 3-leg arbs with `inv_sum` between 0.94 and
-0.999, rounding to whole dollars:
+It is NOT a guaranteed loss, and cannot be. For any genuine arb the branch profits weighted
+by 1/o_i sum to T(1 - inv_sum) > 0, where T is what you actually staked, so at least one
+branch always pays. Rounding destroys the guarantee, not the money. Measured across every
+cap below: zero cases out of 3,000 were negative on every branch.
 
-    naive per-leg rounding produced a GUARANTEED LOSS in  6.9% of them
-    naive per-leg rounding was worse than optimal in     56.0% of them
+HOW OFTEN, AND WHY THE NUMBER MOVES
+-----------------------------------
+The rate depends almost entirely on your stake cap, because the whole effect is the size of
+the rounding step relative to the edge. Over 3,000 randomly generated 2- and 3-leg arbs with
+`inv_sum` between 0.94 and 0.999, rounding to whole dollars, naive per-leg rounding left a
+non-positive worst case in:
+
+    $10 cap   84.8%        $60 cap   18.6%
+    $20 cap   55.4%       $100 cap   11.1%
+    $40 cap   31.3%       $200 cap    4.5%
+
+An earlier version of this docstring quoted a single figure of 6.9% (it corresponds to a cap
+of about $150) without stating the cap, which made it look like a property of arbitrage
+rather than of the stake you happen to be using. It also claimed 56.0% "worse than optimal";
+that one does not reproduce here at any cap — the same sweep gives 68-91%. Quote a cap or
+quote nothing.
 
 So this module never rounds per leg. It searches for the plan that maximises the worst-case
 return, by designating each leg in turn as the binding one and sweeping its stake — see
@@ -275,10 +292,11 @@ def size(
     profit = round(min(l.ret for l in legs) - staked, 10)
 
     # A non-positive worst case is NOT viable, even though the arithmetic "worked". This is
-    # the case the whole module exists for: rounding a thin arb into a guaranteed loss.
+    # the case the whole module exists for: rounding a thin arb out of being an arb at all.
     viable = profit > 0
     reason = "" if viable else (
-        "rounding to %g leaves a worst-case of %.2f — placing this is a guaranteed loss. "
-        "Try a larger total, or a book that accepts finer stakes." % (step, profit)
+        "rounding to %g leaves a worst-case of %.2f — this is no longer a locked position, "
+        "it is a directional bet. Try a larger total, or a book that accepts finer stakes."
+        % (step, profit)
     )
     return Sizing(legs, staked, profit, theoretical, step, viable, reason)
