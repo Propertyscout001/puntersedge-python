@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.2.2
+
+A documentation-and-wording release. No behaviour changes to sizing, gating or the
+ledger; one user-visible string changed, and the claims around it were wrong.
+
+- **`size()` no longer calls a bad plan a "guaranteed loss", because it cannot be one.**
+  For any genuine arb the branch profits weighted by `1/o_i` sum to `T(1 - inv_sum) > 0`,
+  where `T` is what you actually staked — so at least one branch always pays, whatever
+  integer stakes you choose. Zero of 3,000 generated cases were negative on every branch.
+  What rounding destroys is the *guarantee*, not the money: the position stops being
+  locked and becomes a directional bet you did not choose. The refusal now reads
+  `"...this is no longer a locked position, it is a directional bet."` If you match on
+  that string, this is a breaking change to the text.
+
+- **The 6.9% figure now carries its stake cap, which is the parameter that decides it.**
+  The rate at which naive per-leg rounding leaves a non-positive worst case runs from
+  ~84.8% at a $10 cap to ~4.5% at $200 on the same generator. 6.9% corresponds to a cap
+  of about $150. Quoting it bare made a property of your stake size look like a property
+  of arbitrage. The README and the `sizing` module docstring now give the whole curve.
+
+- **"Worse than optimal in 56%" is withdrawn.** It does not reproduce at any cap; the
+  same sweep gives 68-91%. Rather than publish a replacement single number for a
+  quantity that moves this much, the docs now state the range.
+
+- **The credit table in the README understated cost by up to ~2x.** A poll costs 3
+  credits *per sport in your list* plus 1 per sport needing a freshness check, not a flat
+  3 — so a two-sport 15-minute loop is 20,160 credits/month, not ~17,000, and the free
+  tier fits only a single sport polled three-hourly. `estimate_poll_cost()` and
+  `budget_advice()` were correct throughout; only the table was wrong.
+
+- **Brute-force verification is stated at its real scope.** `tests/test_sizing.py` checks
+  `size()` against exhaustive enumeration for two- and three-leg markets. The unimodality
+  argument proves exactness for two legs; three is verified by test, not by proof.
+
 ## 0.2.1
 
 Three fixes, all from the first run of the scanner against the live API.

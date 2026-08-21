@@ -195,13 +195,20 @@ was not. It is **not** a guaranteed loss, and cannot be — for any genuine arb 
 weighted by `1/oᵢ` sum to `T(1−S) > 0`, so at least one branch always pays. Rounding destroys
 the guarantee, not the money.
 
-How often it bites depends entirely on how thin your arbs are, so here is a reproducible figure
-rather than a headline one. Prices uniform on [1.30, 9.00], margin uniform on [0.05%, 2%], $200
-cap, whole-dollar steps, seeded: naive rounding leaves a non-positive worst case **16.5%** of
-the time and is beaten by an exhaustive search **84.7%** of the time. Widen the margin range to
-10% and the first number falls to **3.1%**. *(This README claimed a "guaranteed loss" in 6.9% of
-thin arbs and worse-than-optimal in 56% until 2026-08-21. Those came from a sample whose
-parameters were never recorded, so they are unreproducible and are withdrawn.)*
+How often it bites depends on your **stake cap**, because the whole effect is the size of the
+rounding step relative to the edge. On 3,000 generated 2- and 3-leg arbs with `inv_sum` between
+0.94 and 0.999, at whole-dollar stakes, naive per-leg rounding leaves a non-positive worst case
+in:
+
+| cap | $10 | $20 | $40 | $60 | $100 | $200 |
+|---|---|---|---|---|---|---|
+| rate | 84.8% | 55.4% | 31.3% | 18.6% | 11.1% | 4.5% |
+
+*(This README quoted a flat **6.9%** until 2026-08-21. That figure is real — it corresponds to a
+cap of about $150 — but quoting it without the cap made a property of your stake size look like
+a property of arbitrage. The companion "worse than optimal in 56%" does not reproduce at any cap;
+the same sweep gives 68–91%. And the word it used was "guaranteed loss", which is the part that
+was actually wrong.)*
 
 `size()` searches for the plan that maximises your worst case and refuses outright when nothing
 clears zero. `tests/test_sizing.py` checks it against exhaustive brute force over the whole
