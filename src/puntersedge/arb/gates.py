@@ -137,8 +137,15 @@ class GateConfig:
     unknown_age: UnknownAge = UnknownAge.REJECT
 
     # Shapes to consider. A kind outside this set is refused as `wrong_kind` (policy).
+    #
+    # RACING_BACK_BACK is in the default set, but that does NOT mean a default scan reads
+    # racing: the scanner only fetches it when asked (`--racing`). Kinds gate what may be
+    # CONSIDERED; the scanner gates what is FETCHED. If racing were left out here, opting in
+    # would silently refuse every race as `wrong_kind` — a policy refusal that looks like
+    # "no arbs found", which is the exact ambiguity these reason codes exist to remove.
     kinds: Set[ArbKind] = field(
-        default_factory=lambda: {ArbKind.SPORTS_BACK_BACK, ArbKind.LINES_BACK_BACK}
+        default_factory=lambda: {ArbKind.SPORTS_BACK_BACK, ArbKind.LINES_BACK_BACK,
+                                 ArbKind.RACING_BACK_BACK}
     )
 
     def __post_init__(self) -> None:

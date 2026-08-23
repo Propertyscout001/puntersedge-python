@@ -18,16 +18,24 @@ from typing import Any, Dict, List, Optional
 class ArbKind(str, Enum):
     """The arb shapes a customer of the public API can see.
 
-    There is deliberately NO racing back/lay kind. That shape needs a Betfair exchange lay
-    price, and both `/v1/arb/racing` and `/v1/racing/exchange` return HTTP 410 to every
-    customer key — the exchange side is withheld pending a Betfair data licence. Adding the
-    kind would let a caller build a scanner that can only ever return nothing, which is the
-    failure mode this package exists to prevent. Use `racing_best_odds()` for cross-book
-    racing value instead; it needs no exchange.
+    There is still deliberately NO racing BACK/LAY kind, and that ruling has not moved. That
+    shape needs a Betfair exchange lay price, and both `/v1/arb/racing` and
+    `/v1/racing/exchange` return HTTP 410 to every customer key — the exchange side is
+    withheld pending a Betfair data licence. Adding it would let a caller build a scanner
+    that can only ever return nothing, which is the failure mode this package exists to
+    prevent. Verified again 2026-08-23: `/v1/arb/racing` still answers 410.
+
+    RACING_BACK_BACK is the shape that same paragraph pointed at as the alternative —
+    book-vs-book across the whole field, built from `racing_best_odds()`, which needs no
+    exchange. It is the recommendation being implemented, not a reversal of the ruling.
     """
 
     SPORTS_BACK_BACK = "sports_back_back"  # h2h, one back per outcome, best price each
     LINES_BACK_BACK = "lines_back_back"    # spreads/totals, two matched lines across books
+    # One back per RUNNER at the best book for that runner. The field is the outcome space,
+    # so a race is simply an N-way market where N is the number of live runners — which is
+    # why Opportunity.legs is a list and not the engine's back/lay pair.
+    RACING_BACK_BACK = "racing_back_back"
 
 
 UNKNOWN_AGE = None

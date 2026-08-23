@@ -62,8 +62,15 @@ def cmd_scan(args) -> int:
     client = _client(args)
     cfg = _gate_config(args)
     sports = [s.strip() for s in args.sports.split(",")] if args.sports else None
+    # A racing-only scan must not pay for a sports call it never wanted. Without this,
+    # `sports=None` means "all sports" and --racing could only ever ADD 3 credits to a
+    # sports scan — which is the wrong default for a racing-first customer.
+    if getattr(args, "no_sports", False):
+        sports = []
+    cats = [c.strip() for c in (args.categories or "").split(",") if c.strip()] or None
     scanner = Scanner(
-        client, cfg, sports=sports, lines=args.lines, credit_budget=args.budget
+        client, cfg, sports=sports, lines=args.lines, credit_budget=args.budget,
+        racing=args.racing, racing_categories=cats, racing_num_races=args.races,
     )
 
     if args.watch and not args.yes:
@@ -272,6 +279,14 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--allow-unaged", action="store_true",
                    help="accept prices whose age is unknown (NOT recommended)")
     s.add_argument("--lines", action="store_true", help="also scan spreads/totals")
+    s.add_argument("--racing", action="store_true",
+                   help="also scan racing, book-vs-book across the whole field")
+    s.add_argument("--no-sports", action="store_true",
+                   help="skip sports entirely (use with --racing for a racing-only scan)")
+    s.add_argument("--categories",
+                   help="racing categories, e.g. horse,greyhound,harness (default: all)")
+    s.add_argument("--races", type=int, default=20,
+                   help="how many upcoming races to scan per category (default 20)")
     s.add_argument("--stake", type=float, default=100.0,
                    help="total to lay out per arb, as a CAP (default 100)")
     s.add_argument("--step", type=float, default=1.0,

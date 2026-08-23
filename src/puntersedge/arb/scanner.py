@@ -42,8 +42,8 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
 from .gates import GateConfig, classify, refusal_reasons
-from .models import Opportunity, Verdict
-from .parse import from_lines_payload, from_sports_payload
+from .models import ArbKind, Opportunity, Verdict
+from .parse import from_lines_payload, from_racing_best_odds, from_sports_payload
 
 # Credit costs, from the API's own `check_and_deduct` calls. Hardcoded deliberately: they
 # are not discoverable at runtime, and a scanner that guesses its own spend is worse than
@@ -51,6 +51,10 @@ from .parse import from_lines_payload, from_sports_payload
 COST_ARB_SPORTS = 3
 COST_ARB_LINES = 3
 COST_ODDS_PER_MARKET = 1
+# /v1/racing/best-odds. Unlike sports this needs NO enrichment call: every runner's best
+# price arrives with its own age_seconds, so a racing poll is a flat 3 credits however many
+# races come back.
+COST_RACING_BEST_ODDS = 3
 
 # The upstream sports poll interval. Polling faster cannot surface anything new.
 UPSTREAM_REFRESH_S = 900
@@ -158,14 +162,26 @@ class Scanner:
         *,
         sports: Optional[Sequence[str]] = None,
         lines: bool = False,
+        racing: bool = False,
+        racing_categories: Optional[Sequence[str]] = None,
+        racing_num_races: int = 20,
         credit_budget: Optional[int] = None,
         min_interval_s: float = UPSTREAM_REFRESH_S,
         enrich_max_age_minutes: int = MAX_ENRICH_AGE_MINUTES,
     ):
         self.client = client
         self.cfg = cfg or GateConfig()
-        self.sports = list(sports) if sports else [None]
+        # `None` inside the list means "every sport"; an EMPTY list means "no sports at
+        # all", which is what a racing-only scan passes. `sports or [None]` would have
+        # collapsed the two and silently billed a racing-only user for a sports call.
+        self.sports = [None] if sports is None else list(sports)
         self.lines = lines
+        # Opt-in. GateConfig allows RACING_BACK_BACK by default so that opting in is not
+        # silently refused as `wrong_kind`, but nothing is FETCHED unless asked — a sports
+        # user must not start paying racing credits because of a library upgrade.
+        self.racing = racing
+        self.racing_categories = list(racing_categories) if racing_categories else [None]
+        self.racing_num_races = max(1, int(racing_num_races))
         self.credit_budget = credit_budget
         self.credits_spent = 0
         self.min_interval_s = min_interval_s
@@ -189,6 +205,9 @@ class Scanner:
         base = COST_ARB_SPORTS * len(self.sports)
         if self.lines:
             base += COST_ARB_LINES * len(self.sports)
+        if self.racing:
+            # Flat per category, with no enrichment term: racing prices carry their own ages.
+            base += COST_RACING_BEST_ODDS * len(self.racing_categories)
         return base + enriched_sports * COST_ODDS_PER_MARKET
 
     def credits_per_month(self, interval_s: float) -> float:
@@ -268,6 +287,20 @@ class Scanner:
                 except Exception as exc:
                     result.errors.append("arb_lines(%s): %s" % (sport, _brief(exc)))
 
+        # Racing, if asked. Deliberately NOT /v1/arb/racing: that is the back/lay shape and
+        # answers 410 to every customer key pending a Betfair data licence. This is
+        # book-vs-book across the field and needs no exchange.
+        if self.racing:
+            for cat in self.racing_categories:
+                try:
+                    self._spend(COST_RACING_BEST_ODDS, "/v1/racing/best-odds")
+                    raw.extend(from_racing_best_odds(self.client.racing_best_odds(
+                        categories=cat, num_races=self.racing_num_races)))
+                except CreditBudgetExceeded:
+                    raise
+                except Exception as exc:
+                    result.errors.append("racing_best_odds(%s): %s" % (cat, _brief(exc)))
+
         result.candidates = len(raw)
         result.credits_spent = self.credits_spent
 
@@ -283,7 +316,14 @@ class Scanner:
 
         # Stage 3 — enrich ONLY the sports that still have something worth paying for.
         ages: Dict[Tuple[str, str], float] = {}
-        needed = sorted({(o.sport or "") for o in survivors if o.sport})
+        # RACING IS EXCLUDED FROM ENRICHMENT, and this is not an optimisation.
+        # `sport` holds the racing CATEGORY ("greyhound", "horse", "harness"), which is
+        # not a sport_key — /v1/sports/greyhound/odds 404s. Without this guard every
+        # racing poll would spend a credit per category on a call that cannot succeed and
+        # then report the races as un-age-checked, even though racing prices already
+        # carry age_seconds from best-odds and need no enrichment at all.
+        needed = sorted({(o.sport or "") for o in survivors
+                         if o.sport and o.kind is not ArbKind.RACING_BACK_BACK})
         for sport in needed:
             try:
                 self._spend(COST_ODDS_PER_MARKET, "/v1/sports/%s/odds" % sport)

@@ -13,7 +13,7 @@ import random
 import pytest
 
 from puntersedge.arb import ArbKind, Leg, Opportunity
-from puntersedge.arb.sizing import minimum_viable_total, size, theoretical_split
+from puntersedge.arb.sizing import MAX_LEGS, minimum_viable_total, size, theoretical_split
 
 
 def opp(odds, books=None):
@@ -292,11 +292,34 @@ def test_sizing_is_falsey_when_not_viable():
 
 
 def test_refuses_an_absurd_number_of_legs():
-    """2^N enumeration — cap it rather than hang on a deformed payload.
+    """Cap the sweep rather than hang on a deformed payload.
 
-    Odds of 20.0 so the 13 legs genuinely cross (inv_sum 0.65). With 2.5 they would not,
-    and the function would exit at the inv_sum check having never reached the cap — which
-    is exactly the hole this test caught.
+    Odds high enough that the legs genuinely cross. With short odds they would not, and the
+    function would exit at the inv_sum check having never reached the cap — which is exactly
+    the hole this test caught, so the crossing matters more than the leg count.
+
+    The cap was 12 with the comment "no real market has this many outcomes". Racing made
+    that false: a race is an N-way market where N is the field, measured 4 to 15 runners
+    over 25 live races on 2026-08-23. Asserted against MAX_LEGS rather than a literal so
+    raising the cap for a bigger field cannot silently un-test the guard.
     """
+    n = MAX_LEGS + 1
+    assert sum(1.0 / 40.0 for _ in range(n)) < 1.0, "legs must cross or the cap is unreachable"
     with pytest.raises(ValueError, match="refusing to size"):
-        size(opp([20.0] * 13), 100)
+        size(opp([40.0] * n), 100)
+
+
+def test_sizes_a_full_racing_field():
+    """The reason the cap moved: a 15-runner race must size, not raise.
+
+    Book-vs-book racing backs every runner, so the leg count is the field. This is the
+    positive control for MAX_LEGS — without it, raising the cap is untested in the only
+    direction that motivated it.
+    """
+    # 15 runners whose best prices genuinely cross (inv_sum ~0.94).
+    odds = [16.0] * 15
+    s = size(opp(odds), 200, step=1.0)
+    assert s.viable, s.reason
+    assert len(s.legs) == 15
+    assert s.total_staked <= 200 + 1e-9
+    assert s.profit > 0

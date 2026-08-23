@@ -146,3 +146,95 @@ def from_lines_payload(
                 )
             )
     return out
+
+
+def from_racing_best_odds(payload: Any) -> List[Opportunity]:
+    """Parse `client.racing_best_odds(...)` into RACING_BACK_BACK opportunities.
+
+    A race is an N-way market where N is the field, so there is one leg per live runner at
+    whichever book is best for that runner. Back every runner and one of them must win.
+
+    ⛔ NOT `/v1/arb/racing`. That endpoint is the back/lay shape and answers HTTP 410 to every
+    customer key — the lay leg needs a Betfair exchange price withheld pending a data licence.
+    Verified again 2026-08-23. `racing_best_odds` needs no exchange, and its own docstring
+    names it as the endpoint to use instead.
+
+    WHY `market_percentage` IS THE SERVER'S VERDICT, and why nothing here recomputes it.
+    The sports parser leans on the server's `is_arb` because a client cannot re-derive
+    `covers_outcome_space` — the field that says whether the priced selections cover every
+    way the market can settle. Racing has the same hazard in a sharper form: a scratched
+    runner must NOT be backed, and a runner missing from the payload means the field is not
+    covered at all. `market_percentage` is the server's own 100 * sum(1/best_win) over
+    exactly the live runners, with scratchings already excluded. Verified on 25 consecutive
+    live races 2026-08-23: it matched a recomputation to within 0.01pp on 25 of 25, including
+    a race carrying two scratchings. So `is_arb` is set from the server's number, not from
+    arithmetic done here, and the `server_not_arb` gate keeps its meaning.
+
+    A race is SKIPPED, never partially priced, when any live runner has no best_win price.
+    Backing a subset of the field is not an arb, it is a bet on the runners you covered.
+    """
+    out: List[Opportunity] = []
+    for race in _rows(payload):
+        runners = race.get("runners") or []
+        if not isinstance(runners, list) or len(runners) < 2:
+            continue
+
+        legs: List[Leg] = []
+        incomplete = False
+        for r in runners:
+            if not isinstance(r, dict):
+                incomplete = True
+                break
+            win = r.get("best_win") or {}
+            price = _f(win.get("price"))
+            book = str(win.get("bookmaker") or "")
+            if price <= 1.0 or not book:
+                # No price, or an unbackable one. The field is no longer covered, so the
+                # whole race goes — see the docstring.
+                incomplete = True
+                break
+            age = win.get("age_seconds")
+            legs.append(
+                Leg(
+                    book=book,
+                    selection=str(r.get("name") or ""),
+                    odds=price,
+                    # Racing carries its own per-price age, so unlike sports this needs no
+                    # second enrichment call and costs no extra credits.
+                    quote_age_s=_f(age) if age is not None else None,
+                    event_url=str(win.get("source_url") or ""),
+                )
+            )
+        if incomplete or len(legs) < 2:
+            continue
+
+        mp = race.get("market_percentage")
+        mp_f = _f(mp, default=-1.0)
+        if mp_f <= 0:
+            continue        # no server verdict, so there is nothing to affirm an arb
+
+        venue = str(race.get("venue") or "").strip()
+        rno = str(race.get("race_number") or "").strip()
+        name = str(race.get("race_name") or "").strip()
+        label = " ".join(x for x in (venue, ("R" + rno) if rno else "", name) if x)
+
+        raw = dict(race)
+        # The server's verdict, in the field the gates already read. Below 100 means the best
+        # prices across books beat the field.
+        raw["is_arb"] = mp_f < 100.0
+        out.append(
+            Opportunity(
+                kind=ArbKind.RACING_BACK_BACK,
+                event_name=label or "race",
+                # `category` is horse / greyhound / harness. Reusing the `sport` slot keeps
+                # --books, min-edge and the ledger working unchanged.
+                sport=str(race.get("category") or "racing"),
+                legs=legs,
+                # Overround under 100 is the margin. Clamped at zero so a 118% market reports
+                # 0.0 rather than a negative "edge".
+                edge_pct=max(0.0, 100.0 - mp_f),
+                source="/v1/racing/best-odds",
+                raw=raw,
+            )
+        )
+    return out

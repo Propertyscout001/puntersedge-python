@@ -76,6 +76,17 @@ DEFAULT_STEP = 0.01
 # goes stale.
 DEFAULT_MIN_STAKE = 1.0
 
+# Runaway guard on the binding-leg sweep, which is O(N * cap/step). It was 12, with the
+# comment "no real market has this many outcomes" — true for h2h and spreads, and FALSE the
+# moment racing arrived: a race is an N-way market where N is the field. Measured over 25
+# live races on 2026-08-23, fields ran 4 to 15 runners and one race in 25 exceeded the old
+# cap, so a 15-runner race would have raised instead of sizing.
+#
+# 24 covers any Australian field with headroom (the largest domestic fields are ~24 in a
+# Melbourne Cup-style handicap) while still refusing a payload deformed enough to hang the
+# sweep. It is a guard, not a market opinion.
+MAX_LEGS = 24
+
 
 @dataclass(frozen=True)
 class LegStake:
@@ -184,10 +195,10 @@ def size(
     # the thing being protected, and a guard a malformed payload can route around is not a
     # guard — a 13-leg opportunity whose prices happen not to cross would otherwise exit at
     # the inv_sum check and never reach this.
-    if len(odds) > 12:
+    if len(odds) > MAX_LEGS:
         raise ValueError(
-            "refusing to size a %d-leg opportunity: no real market has this many outcomes"
-            % len(odds)
+            "refusing to size a %d-leg opportunity: more outcomes than any market this "
+            "package scans (cap %d)" % (len(odds), MAX_LEGS)
         )
 
     mins = [
