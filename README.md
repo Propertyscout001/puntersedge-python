@@ -65,11 +65,31 @@ for arb in pe.arb_sports(min_profit_pct=0):
             print(f"   stake ${leg['stake']} on {leg['name']} @ {leg['bookmaker']}")
 ```
 
-Racing cross-book value (no exchange needed):
+Racing, book-vs-book across the whole field (no exchange needed):
 
 ```python
 races = pe.racing_best_odds(categories="horse", num_races=5)
+for r in races:
+    if float(r["market_percentage"]) < 100:      # the field is beatable across books
+        print(r["venue"], "R" + r["race_number"], r["market_percentage"])
 ```
+
+`market_percentage` is the server's own overround over exactly the live runners, with
+scratchings already excluded. Under 100 means the best prices across books beat the field.
+
+The scanner reads the same endpoint, so racing is one flag:
+
+```bash
+puntersedge-arb scan --racing --no-sports --categories horse,greyhound
+```
+
+⛔ There is no racing back/lay support and there will not be while the exchange side is
+withheld: `/v1/arb/racing` and `/v1/racing/exchange` return HTTP 410 to every customer key.
+A scanner built on those could only ever return nothing.
+
+⚠️ Book-vs-book racing arbs are **rarer than sports**. Measured over 25 consecutive live
+races, the tightest market was 118.31% — a scan returning nothing is the normal result, not
+a fault.
 
 ## Endpoints covered
 
@@ -260,6 +280,7 @@ pip install puntersedge
 
 puntersedge-arb config                          # where your key comes from (never the key)
 puntersedge-arb scan --sports afl,nrl --stake 200
+puntersedge-arb scan --racing --no-sports --categories horse   # racing only, 3 credits
 puntersedge-arb scan --watch 900 --budget 5000 --record
 puntersedge-arb ledger pnl
 ```
