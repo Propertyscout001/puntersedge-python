@@ -13,7 +13,12 @@ import stat
 import pytest
 
 from puntersedge import ApiKeyError, ConfigError, resolve_api_key
-from puntersedge.config import ConfigChain, default_config_path, load_config_file
+from puntersedge.config import (
+    ConfigChain,
+    default_config_path,
+    load_config_file,
+    signup_url,
+)
 
 KEY = "pe_live_TESTKEY"
 
@@ -216,7 +221,25 @@ def test_terminal_error_names_every_source_and_leaks_nothing(tmp_path):
     assert "set but EMPTY" in msg          # distinguishes empty from unset
     assert "no [puntersedge] section" in msg
     assert "found: arb" in msg
-    assert "api-platform#signup" in msg
+    assert "api-platform" in msg and "#signup" in msg
+    # The tag is the whole reason this link is measurable. Untagged, an SDK signup is
+    # indistinguishable from someone typing the domain in cold.
+    assert "utm_source=python_sdk" in msg
+
+
+def test_signup_url_puts_the_query_before_the_fragment():
+    """A fragment is never sent to the server, so `#signup?utm_source=` captures NOTHING and
+    the link silently reports as untagged. Order is the whole contract here."""
+    u = signup_url("readme")
+    assert u.index("?") < u.index("#"), u
+    assert u.endswith("#signup")
+    assert "utm_source=python_sdk" in u and "utm_medium=readme" in u
+
+
+def test_signup_url_source_is_overridable_for_the_arb_bundle():
+    u = signup_url("cli_help", source="arb_bundle")
+    assert "utm_source=arb_bundle" in u
+    assert "utm_source=python_sdk" not in u
 
 
 def test_home_unset_yields_no_path_not_a_tilde_directory():

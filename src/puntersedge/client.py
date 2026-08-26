@@ -3,7 +3,7 @@ PuntersEdge — official Python client for the Australian Sports Odds API.
 
 Docs:     https://puntersedge.online/developers
 API home: https://puntersedge.online/api-platform
-Free key: https://puntersedge.online/api-platform#signup
+Free key: https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=docstring#signup
 """
 from __future__ import annotations
 
@@ -102,7 +102,7 @@ class PuntersEdge:
     as clean JSON.
 
     Get a free API key (1,500 credits/mo, no credit card) at
-    https://puntersedge.online/api-platform#signup
+    https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=docstring#signup
 
     This package never holds bookmaker credentials, never places bets, and never operates
     a betting account. It reads odds and computes sizing; you place every bet yourself in

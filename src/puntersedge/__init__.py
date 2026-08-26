@@ -8,7 +8,7 @@ This package never holds bookmaker credentials, never places bets, and never ope
 betting account. It reads odds and computes sizing; you place every bet yourself in your
 own session.
 
-Free API key (no credit card): https://puntersedge.online/api-platform#signup
+Free API key (no credit card): https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=docstring#signup
 Docs: https://puntersedge.online/developers
 """
 from .client import PuntersEdge
@@ -23,7 +23,7 @@ from .exceptions import (
     ServerError,
 )
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 __all__ = [
     "PuntersEdge",
     "PuntersEdgeError",

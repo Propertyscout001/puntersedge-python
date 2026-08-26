@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "puntersedge"
-version = "0.3.0"
+version = "0.3.1"
 description = "Official Python client for the PuntersEdge Australian Sports Odds API — live bookmaker odds, racing, best-odds comparison and arbitrage."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -38,11 +38,11 @@ dependencies = ["requests>=2.25"]
 puntersedge-arb = "puntersedge.arb.cli:main"
 
 [project.urls]
-Homepage = "https://puntersedge.online/api-platform"
-Documentation = "https://puntersedge.online/developers"
-"API Pricing" = "https://puntersedge.online/api/pricing"
+Homepage = "https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=pypi"
+Documentation = "https://puntersedge.online/developers?utm_source=python_sdk&utm_medium=pypi"
+"API Pricing" = "https://puntersedge.online/api/pricing?utm_source=python_sdk&utm_medium=pypi"
 Repository = "https://github.com/Propertyscout001/puntersedge-python"
-"Get an API key" = "https://puntersedge.online/api-platform#signup"
+"Get an API key" = "https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=pypi#signup"
 
 [tool.setuptools.packages.find]
 where = ["src"]

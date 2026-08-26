@@ -1,8 +1,8 @@
 # PuntersEdge — Australian Sports Odds API (Python client)
 
-Official Python client for the [**PuntersEdge Australian Sports Odds API**](https://puntersedge.online/api-platform) — live bookmaker odds across 11 Australian books, racing next-to-go, best-odds comparison, and pre-computed **arbitrage / value** signals, all as clean JSON.
+Official Python client for the [**PuntersEdge Australian Sports Odds API**](https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=readme) — live bookmaker odds across 11 Australian books, racing next-to-go, best-odds comparison, and pre-computed **arbitrage / value** signals, all as clean JSON.
 
-> Get a **free API key** (1,500 credits/month, no credit card) → **[puntersedge.online/api-platform](https://puntersedge.online/api-platform#signup)**
+> Get a **free API key** (1,500 credits/month, no credit card) → **[puntersedge.online/api-platform](https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=readme#signup)**
 
 [![PyPI](https://img.shields.io/pypi/v/puntersedge.svg)](https://pypi.org/project/puntersedge/)
 [![Python](https://img.shields.io/pypi/pyversions/puntersedge.svg)](https://pypi.org/project/puntersedge/)
@@ -34,7 +34,7 @@ pip install puntersedge
 ```python
 from puntersedge import PuntersEdge
 
-pe = PuntersEdge()  # https://puntersedge.online/api-platform#signup
+pe = PuntersEdge()  # https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=readme#signup
 
 # List active sports
 for sport in pe.sports():
@@ -380,10 +380,10 @@ and why the rest do not.
 
 ## Links
 
-- 🔑 **Free API key** — https://puntersedge.online/api-platform#signup
-- 📚 **Documentation** — https://puntersedge.online/developers
-- 💳 **Pricing** — https://puntersedge.online/api/pricing
-- 🧮 **Live sandbox (no key)** — https://puntersedge.online/api-platform#trylive
+- 🔑 **Free API key** — https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=readme#signup
+- 📚 **Documentation** — https://puntersedge.online/developers?utm_source=python_sdk&utm_medium=readme
+- 💳 **Pricing** — https://puntersedge.online/api/pricing?utm_source=python_sdk&utm_medium=readme
+- 🧮 **Live sandbox (no key)** — https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=readme#trylive
 - 📮 **Postman collection** — https://api.puntersedge.online/postman.json (Postman → Import → Link)
 
 ## Disclaimer

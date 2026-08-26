@@ -260,13 +260,24 @@ def cmd_config(args) -> int:
 
 # ── argument parsing ─────────────────────────────────────────────────────────────────
 def build_parser() -> argparse.ArgumentParser:
+    # Tagged as arb_bundle, not python_sdk: the bundle is its own acquisition surface and the
+    # whole point of shipping it free was to find out whether it brings anyone in. Sharing the
+    # SDK's tag would make that unanswerable.
+    from ..config import signup_url
+
     p = argparse.ArgumentParser(
         prog="puntersedge-arb",
-        description="Scan the PuntersEdge API for book-vs-book arbitrage, size the stakes, "
-                    "and keep an honest ledger. It never places a bet and never holds a "
+        # Raw, and hand-wrapped below: the default formatter re-wraps the epilog on width and
+        # snapped the signup URL across two lines ("...api-\nplatform?utm_source="), which is
+        # a broken copy-paste for the one link here that is meant to be followed.
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description="Scan the PuntersEdge API for book-vs-book arbitrage, size the stakes,\n"
+                    "and keep an honest ledger. It never places a bet and never holds a\n"
                     "bookmaker login.",
-        epilog="No profit is claimed or implied. Australian bookmakers restrict accounts "
-               "that arb, usually within weeks.",
+        epilog="No profit is claimed or implied. Australian bookmakers restrict accounts\n"
+               "that arb, usually within weeks.\n\n"
+               "Free API key (1,500 credits/mo, no credit card):\n  "
+               + signup_url("cli_help", source="arb_bundle"),
     )
     p.add_argument("--config-file", help="config file to read instead of the default")
     sub = p.add_subparsers(dest="command", required=True)

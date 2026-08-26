@@ -73,7 +73,26 @@ ALLOWED_SECTIONS = frozenset({SECTION, ARB_SECTION, ALERT_SECTION})
 ENV_PREFIX = "PUNTERSEDGE_"
 CONFIG_FILE_ENV = ENV_PREFIX + "CONFIG_FILE"
 
-SIGNUP_URL = "https://puntersedge.online/api-platform#signup"
+# Signup links are tagged so this package's contribution is measurable. Untagged, a developer
+# who arrives from `pip install` lands with no utm and no referrer (they paste the URL out of a
+# terminal), and the API's attribution classes them "direct" — the bucket that currently holds
+# every SDK signup and cannot be told apart from someone typing the domain in cold.
+#
+# The query string MUST precede the fragment: `?utm_source=...#signup`. A `#signup?utm_source=`
+# is never sent to the server, so it captures nothing.
+_SIGNUP_BASE = "https://puntersedge.online/api-platform"
+
+
+def signup_url(medium: str, source: str = "python_sdk") -> str:
+    """Free-key signup URL, tagged with the surface that sent the reader.
+
+    `medium` names the surface (`sdk_error`, `readme`, `pypi`, `docstring`, `example`,
+    `cli_help`) so "which touchpoint converts" is answerable, not guessed.
+    """
+    return f"{_SIGNUP_BASE}?utm_source={source}&utm_medium={medium}#signup"
+
+
+SIGNUP_URL = signup_url("sdk_error")
 
 PathLike = Union[str, "os.PathLike[str]"]
 

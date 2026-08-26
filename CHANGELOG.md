@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.3.1
+
+Attribution only. No behaviour changes to the client, sizing, gating or the ledger — the
+only edits are to link URLs, plus one new helper and its tests.
+
+- **Signup links now carry a `utm_source`.** Every link this package hands out pointed at
+  an untagged `/api-platform#signup`. A developer arriving from `pip install` has no
+  referrer (they paste the URL out of a terminal), so the API's attribution classed them
+  `direct` — the same bucket as someone typing the domain in cold. With ~384 downloads a
+  month, that made the SDK's entire contribution unmeasurable, and "does the SDK bring in
+  customers" unanswerable.
+- **`config.signup_url(medium, source="python_sdk")`** builds the tagged URL. `medium`
+  names the surface — `pypi`, `readme`, `docstring`, `example`, `sdk_error`, `cli_help` —
+  so which touchpoint actually converts is measured rather than guessed.
+- **`puntersedge-arb` is tagged `arb_bundle`, not `python_sdk`**, and its `--help` epilog
+  now carries the free-key link. The bundle was shipped free to find out whether it brings
+  anyone in; sharing the SDK's tag would have left that unanswerable.
+- The query string precedes the fragment (`?utm_source=…#signup`). A fragment is never sent
+  to the server, so the reverse order captures nothing — there is now a test pinning it.
+
 ## 0.2.2
 
 A documentation-and-wording release. No behaviour changes to sizing, gating or the
