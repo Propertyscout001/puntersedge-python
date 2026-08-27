@@ -80,7 +80,7 @@ CONFIG_FILE_ENV = ENV_PREFIX + "CONFIG_FILE"
 #
 # The query string MUST precede the fragment: `?utm_source=...#signup`. A `#signup?utm_source=`
 # is never sent to the server, so it captures nothing.
-_SIGNUP_BASE = "https://puntersedge.online/api-platform"
+_SIGNUP_BASE = "https://puntersedge.online/api"
 
 
 def signup_url(medium: str, source: str = "python_sdk") -> str:

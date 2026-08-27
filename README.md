@@ -1,8 +1,8 @@
 # PuntersEdge — Australian Sports Odds API (Python client)
 
-Official Python client for the [**PuntersEdge Australian Sports Odds API**](https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=readme) — live bookmaker odds across 11 Australian books, racing next-to-go, best-odds comparison, and pre-computed **arbitrage / value** signals, all as clean JSON.
+Official Python client for the [**PuntersEdge Australian Sports Odds API**](https://puntersedge.online/api?utm_source=python_sdk&utm_medium=readme) — live bookmaker odds across 14 Australian books, racing next-to-go, best-odds comparison, and pre-computed **arbitrage / value** signals, all as clean JSON.
 
-> Get a **free API key** (1,500 credits/month, no credit card) → **[puntersedge.online/api-platform](https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=readme#signup)**
+> Get a **free API key** (1,500 credits/month, no credit card) → **[puntersedge.online/api](https://puntersedge.online/api?utm_source=python_sdk&utm_medium=readme#signup)**
 
 [![PyPI](https://img.shields.io/pypi/v/puntersedge.svg)](https://pypi.org/project/puntersedge/)
 [![Python](https://img.shields.io/pypi/pyversions/puntersedge.svg)](https://pypi.org/project/puntersedge/)
@@ -14,7 +14,7 @@ Official Python client for the [**PuntersEdge Australian Sports Odds API**](http
 
 Most "sports odds API" products have thin Australian coverage. PuntersEdge is **Australian-first**: Sportsbet, TAB, Neds, Ladbrokes, Unibet, PointsBet, Betr, BetRight, NextBet, Palmerbet and TABtouch — eleven Australian books on racing, six of them on sports — across AFL, NRL, NBA, WNBA, tennis and cricket, plus **horse / greyhound / harness racing**.
 
-- 🟢 **Live bookmaker odds** — one REST endpoint, 11 AU books
+- 🟢 **Live bookmaker odds** — one REST endpoint, 14 AU books (measured live at puntersedge.online/coverage-report)
 - 🏇 **Racing next-to-go** — runners + prices for horse, greyhound, harness
 - ⚖️ **Best-odds comparison** — best price per selection across every book
 - 🎯 **Arbitrage, pre-computed** — surebets and spreads/totals line arbs, with suggested stake splits already calculated for you to place yourself. Racing back/lay against the exchange is withheld pending a Betfair data licence; use `racing_best_odds()` for cross-book racing value
@@ -34,7 +34,7 @@ pip install puntersedge
 ```python
 from puntersedge import PuntersEdge
 
-pe = PuntersEdge()  # https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=readme#signup
+pe = PuntersEdge()  # https://puntersedge.online/api?utm_source=python_sdk&utm_medium=readme#signup
 
 # List active sports
 for sport in pe.sports():
@@ -264,7 +264,7 @@ by roughly 2× at three sports. `estimate_poll_cost()` was right the whole time;
 not.)*
 
 **The free tier cannot run a live scanner.** That is arithmetic, not a limitation I chose.
-A useful sports scanner wants Starter or above. `scanner.budget_advice(interval)` prints the
+A useful sports scanner wants Standard or above. `scanner.budget_advice(interval)` prints the
 number for your configuration, and `credit_budget=` makes the scanner refuse to exceed a cap
 rather than silently draining your month.
 
@@ -380,10 +380,10 @@ and why the rest do not.
 
 ## Links
 
-- 🔑 **Free API key** — https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=readme#signup
+- 🔑 **Free API key** — https://puntersedge.online/api?utm_source=python_sdk&utm_medium=readme#signup
 - 📚 **Documentation** — https://puntersedge.online/developers?utm_source=python_sdk&utm_medium=readme
 - 💳 **Pricing** — https://puntersedge.online/api/pricing?utm_source=python_sdk&utm_medium=readme
-- 🧮 **Live sandbox (no key)** — https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=readme#trylive
+- 🧮 **Live sandbox (no key)** — https://puntersedge.online/api?utm_source=python_sdk&utm_medium=readme#trylive
 - 📮 **Postman collection** — https://api.puntersedge.online/postman.json (Postman → Import → Link)
 
 ## Disclaimer

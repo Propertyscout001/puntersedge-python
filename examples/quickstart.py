@@ -1,7 +1,7 @@
 """Quickstart: list sports, pull NRL odds, compare best prices.
 
 Run:  PUNTERSEDGE_API_KEY=xxx python examples/quickstart.py
-Free key: https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=example#signup
+Free key: https://puntersedge.online/api?utm_source=python_sdk&utm_medium=example#signup
 """
 import os
 

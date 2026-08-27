@@ -38,11 +38,11 @@ dependencies = ["requests>=2.25"]
 puntersedge-arb = "puntersedge.arb.cli:main"
 
 [project.urls]
-Homepage = "https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=pypi"
+Homepage = "https://puntersedge.online/api?utm_source=python_sdk&utm_medium=pypi"
 Documentation = "https://puntersedge.online/developers?utm_source=python_sdk&utm_medium=pypi"
 "API Pricing" = "https://puntersedge.online/api/pricing?utm_source=python_sdk&utm_medium=pypi"
 Repository = "https://github.com/Propertyscout001/puntersedge-python"
-"Get an API key" = "https://puntersedge.online/api-platform?utm_source=python_sdk&utm_medium=pypi#signup"
+"Get an API key" = "https://puntersedge.online/api?utm_source=python_sdk&utm_medium=pypi#signup"
 
 [tool.setuptools.packages.find]
 where = ["src"]
