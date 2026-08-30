@@ -385,6 +385,8 @@ and why the rest do not.
 - 💳 **Pricing** — https://puntersedge.online/api/pricing?utm_source=python_sdk&utm_medium=readme
 - 🧮 **Live sandbox (no key)** — https://puntersedge.online/api?utm_source=python_sdk&utm_medium=readme#trylive
 - 📮 **Postman collection** — https://api.puntersedge.online/postman.json (Postman → Import → Link)
+- 🧪 **Runnable examples** — https://github.com/Propertyscout001/puntersedge-examples (next-to-go, best odds, movers, results, price history)
+- 🖥️ **Next-to-go dashboard** — https://github.com/Propertyscout001/au-racing-odds-dashboard (one stdlib-only file, works without a key)
 
 ## Disclaimer
 
