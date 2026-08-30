@@ -221,7 +221,7 @@ def test_terminal_error_names_every_source_and_leaks_nothing(tmp_path):
     assert "set but EMPTY" in msg          # distinguishes empty from unset
     assert "no [puntersedge] section" in msg
     assert "found: arb" in msg
-    assert "api-platform" in msg and "#signup" in msg
+    assert "puntersedge.online/api?" in msg and "#signup" in msg
     # The tag is the whole reason this link is measurable. Untagged, an SDK signup is
     # indistinguishable from someone typing the domain in cold.
     assert "utm_source=python_sdk" in msg
