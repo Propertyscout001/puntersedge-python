@@ -1,8 +1,12 @@
-# PuntersEdge — Australian Sports Odds API (Python client)
+# PuntersEdge — Australian odds API (Python client)
 
-Official Python client for the [**PuntersEdge Australian Sports Odds API**](https://puntersedge.online/api?utm_source=python_sdk&utm_medium=readme) — live bookmaker odds across 14 Australian books, racing next-to-go, best-odds comparison, and pre-computed **arbitrage / value** signals, all as clean JSON.
+Official Python client for the [PuntersEdge odds API](https://puntersedge.online/api?utm_source=python_sdk&utm_medium=readme) — Australian and New Zealand **racing** odds (AU thoroughbred, greyhound and harness; NZ thoroughbred and harness) and Australian **sports** odds, priced per bookmaker, with best-price comparison, settled results, form and a permanent market-movement archive.
 
-> Get a **free API key** (1,500 credits/month, no credit card) → **[puntersedge.online/api](https://puntersedge.online/api?utm_source=python_sdk&utm_medium=readme#signup)**
+```bash
+pip install puntersedge
+```
+
+Free key: 1,500 credits/month, no credit card — [puntersedge.online/api](https://puntersedge.online/api?utm_source=python_sdk&utm_medium=readme#signup). Or call the `/v1/demo/*` endpoints with no key at all.
 
 [![PyPI](https://img.shields.io/pypi/v/puntersedge.svg)](https://pypi.org/project/puntersedge/)
 [![Python](https://img.shields.io/pypi/pyversions/puntersedge.svg)](https://pypi.org/project/puntersedge/)
@@ -10,24 +14,45 @@ Official Python client for the [**PuntersEdge Australian Sports Odds API**](http
 
 ---
 
-## Why this API
+## What is actually covered
 
-Most "sports odds API" products have thin Australian coverage. PuntersEdge is **Australian-first**: Sportsbet, TAB, Neds, Ladbrokes, Unibet, PointsBet, Betr, BetRight, NextBet, Palmerbet and TABtouch — eleven Australian books on racing, six of them on sports — across AFL, NRL, NBA, WNBA, tennis and cricket, plus **horse / greyhound / harness racing**.
+Numbers here are not marketing copy — they are recomputed every 30 minutes and published at
+**[puntersedge.online/coverage-report.json](https://puntersedge.online/coverage-report.json)**. Read that
+rather than trusting this paragraph; the snapshot below was measured **14 Sep 2026 23:06 UTC**.
 
-- 🟢 **Live bookmaker odds** — one REST endpoint, 14 AU books (measured live at puntersedge.online/coverage-report)
-- 🏇 **Racing next-to-go** — runners + prices for horse, greyhound, harness
-- ⚖️ **Best-odds comparison** — best price per selection across every book
-- 🎯 **Arbitrage, pre-computed** — surebets and spreads/totals line arbs, with suggested stake splits already calculated for you to place yourself. Racing back/lay against the exchange is withheld pending a Betfair data licence; use `racing_best_odds()` for cross-book racing value
-- 📊 **Value & promo boards** — daily plays ranked by EV per $1
-- 🔌 **Predictable JSON** — simple `X-API-Key` auth
+- **14 Australian bookmakers on racing**: `tab`, `tabtouch`, `betdeluxe`, `betr_au`, `pointsbetau`,
+  `betright`, `playup`, `palmerbet`, `unibet`, `neds`, `ladbrokes_au`, `sportsbet`, `betgold`, `boostbet`.
+  Median books quoting an AU race: **14** (mean 13.18) across 1,539 races in the 7-day window.
+- **Racing**: AU thoroughbred, harness and greyhound; NZ thoroughbred and harness. There are **no NZ
+  greyhounds**. Races in other countries appear only because an AU book lists the meeting — the median
+  there is one book, which is not coverage, and you should not treat it as such.
+- **Sports**: `afl`, `aflw`, `nrl`, `nrlw`, `nba`, `wnba`, `nfl`, `ncaaf`, `mlb`, `nhl`, `mma`,
+  `tennis_atp`, `tennis_wta`, `cricket_test`, `cricket_other`, `rugby_union`, `super_league`,
+  `soccer_epl`, `soccer_other`, `basketball_other`. **Sports depth is materially thinner than racing** —
+  fewer books quote a fixture than quote a race. Check before you build on it.
 
-Full docs: **[puntersedge.online/developers](https://puntersedge.online/developers)** · Pricing: **[puntersedge.online/api/pricing](https://puntersedge.online/api/pricing)**
+### What is not here
 
-## Install
+- **Betfair Exchange and Pinnacle are excluded.** Betfair is ingested for internal reference only and
+  withheld from every customer response pending a Betfair data licence; Pinnacle is a non-Australian
+  reference book and is not part of the AU comparison set. `arb_racing()` returns 410 for the same
+  reason. Any page claiming this client returns exchange prices is wrong.
+- **There is no `horse-racing` sport key.** Racing and sports are separate endpoint families because a
+  race has runners, barriers and a jump time and a fixture has two teams and a market.
+- **`/v1/racing/next-to-go` is not AU-only.** Pass `country="AU"` unless you want everything an AU book
+  happens to list.
+- **`racing_closing_lines()` is plan-gated** (403 on free). `racing_price_history()` is the free equivalent.
 
-```bash
-pip install puntersedge
-```
+Bookmaker names above are the identifiers this API returns for publicly posted prices. PuntersEdge is
+not affiliated with, endorsed by, or an agent of any bookmaker.
+
+Full docs: **[puntersedge.online/developers](https://puntersedge.online/developers?utm_source=python_sdk&utm_medium=readme)** · Pricing: **[puntersedge.online/api/pricing](https://puntersedge.online/api/pricing?utm_source=python_sdk&utm_medium=readme)**
+
+## Also available
+
+- **TypeScript / JavaScript** — `npm install puntersedge` ([npmjs.com/package/puntersedge](https://www.npmjs.com/package/puntersedge)), same endpoints, same design.
+- **MCP server** — `pip install puntersedge-mcp` ([PyPI](https://pypi.org/project/puntersedge-mcp/)), for Claude, Cursor and other agent hosts.
+
 
 ## Quickstart
 
@@ -380,13 +405,15 @@ and why the rest do not.
 
 ## Links
 
-- 🔑 **Free API key** — https://puntersedge.online/api?utm_source=python_sdk&utm_medium=readme#signup
-- 📚 **Documentation** — https://puntersedge.online/developers?utm_source=python_sdk&utm_medium=readme
-- 💳 **Pricing** — https://puntersedge.online/api/pricing?utm_source=python_sdk&utm_medium=readme
-- 🧮 **Live sandbox (no key)** — https://puntersedge.online/api?utm_source=python_sdk&utm_medium=readme#trylive
-- 📮 **Postman collection** — https://api.puntersedge.online/postman.json (Postman → Import → Link)
-- 🧪 **Runnable examples** — https://github.com/Propertyscout001/puntersedge-examples (next-to-go, best odds, movers, results, price history)
-- 🖥️ **Next-to-go dashboard** — https://github.com/Propertyscout001/au-racing-odds-dashboard (one stdlib-only file, works without a key)
+- **TypeScript / JavaScript client** — `npm install puntersedge` — https://www.npmjs.com/package/puntersedge
+- **MCP server for AI agents** — `pip install puntersedge-mcp` — https://pypi.org/project/puntersedge-mcp/
+- **Free API key** — https://puntersedge.online/api?utm_source=python_sdk&utm_medium=readme#signup
+- **Documentation** — https://puntersedge.online/developers?utm_source=python_sdk&utm_medium=readme
+- **Pricing** — https://puntersedge.online/api/pricing?utm_source=python_sdk&utm_medium=readme
+- **Live sandbox (no key)** — https://puntersedge.online/api?utm_source=python_sdk&utm_medium=readme#trylive
+- **Postman collection** — https://api.puntersedge.online/postman.json (Postman → Import → Link)
+- **Runnable examples** — https://github.com/Propertyscout001/puntersedge-examples (next-to-go, best odds, movers, results, price history)
+- **Next-to-go dashboard** — https://github.com/Propertyscout001/au-racing-odds-dashboard (one stdlib-only file, works without a key)
 
 ## Disclaimer
 

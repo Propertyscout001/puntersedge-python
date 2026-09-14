@@ -5,32 +5,53 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "puntersedge"
 version = "0.3.1"
-description = "Official Python client for the PuntersEdge Australian Sports Odds API — live bookmaker odds, racing, best-odds comparison and arbitrage."
+description = "Australian odds API client — horse, greyhound and harness racing plus AFL, NRL and other sports odds from 14 Australian bookmakers, with best-price comparison, results and form."
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 authors = [{ name = "PuntersEdge", email = "support@puntersedge.online" }]
 keywords = [
-    "australian sports odds api",
-    "betting api",
-    "odds api",
-    "odds comparison",
-    "arbitrage betting",
-    "horse racing odds",
-    "sportsbet",
-    "betfair",
-    "sports betting data",
-    "bookmaker odds",
+    "australian odds api",
+    "horse racing api",
+    "greyhound racing api",
+    "harness racing api",
+    "racing data api",
+    "afl odds api",
+    "nrl odds api",
+    "odds comparison api",
+    "bookmaker odds comparison",
+    "australian bookmaker odds",
+    "sportsbet odds",
+    "tab odds",
+    "ladbrokes odds",
+    "neds odds",
+    "new zealand racing odds",
+    "closing line data",
+    "sports odds api",
+    "betting data api",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
+    "Environment :: Console",
     "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python :: 3.13",
     "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
 ]
 dependencies = ["requests>=2.25"]
 
@@ -42,6 +63,12 @@ Homepage = "https://puntersedge.online/api?utm_source=python_sdk&utm_medium=pypi
 Documentation = "https://puntersedge.online/developers?utm_source=python_sdk&utm_medium=pypi"
 "API Pricing" = "https://puntersedge.online/api/pricing?utm_source=python_sdk&utm_medium=pypi"
 Repository = "https://github.com/Propertyscout001/puntersedge-python"
+Changelog = "https://github.com/Propertyscout001/puntersedge-python/blob/main/CHANGELOG.md"
+"Issue Tracker" = "https://github.com/Propertyscout001/puntersedge-python/issues"
+"Runnable examples" = "https://github.com/Propertyscout001/puntersedge-examples"
+"Live coverage report" = "https://puntersedge.online/api/coverage?utm_source=python_sdk&utm_medium=pypi"
+"TypeScript client" = "https://www.npmjs.com/package/puntersedge"
+"MCP server" = "https://pypi.org/project/puntersedge-mcp/"
 "Get an API key" = "https://puntersedge.online/api?utm_source=python_sdk&utm_medium=pypi#signup"
 
 [tool.setuptools.packages.find]
