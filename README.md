@@ -39,9 +39,13 @@ rather than trusting this paragraph; the snapshot below was measured **14 Sep 20
   reason. Any page claiming this client returns exchange prices is wrong.
 - **There is no `horse-racing` sport key.** Racing and sports are separate endpoint families because a
   race has runners, barriers and a jump time and a fixture has two teams and a market.
-- **`/v1/racing/next-to-go` is not AU-only.** Pass `country="AU"` unless you want everything an AU book
-  happens to list.
-- **`racing_closing_lines()` is plan-gated** (403 on free). `racing_price_history()` is the free equivalent.
+- **`/v1/racing/next-to-go` is not AU-only.** `racing_best_odds(country="AU")` filters;
+  `racing_next_to_go()` does not take `country` yet, so it returns everything an AU book happens to
+  list, including overseas meetings quoted by a single book.
+- **This client wraps 21 of the API's 60 paths.** Settled results, form, market movers, the
+  closing-line archive, price history, webhooks and the keyless `/v1/demo/*` endpoints are on the API
+  but not yet on this client — call them directly, or use the TypeScript client, which covers them.
+  `racing/closing-lines` is plan-gated and returns 403 on the free tier either way.
 
 Bookmaker names above are the identifiers this API returns for publicly posted prices. PuntersEdge is
 not affiliated with, endorsed by, or an agent of any bookmaker.
