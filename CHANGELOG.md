@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.2
+
+Documentation and defaults only. The free tier is **3,000 credits a month, not 1,500** — every
+mention in the README, the CLI, the client docstring and the scanner's budget arithmetic said
+1,500. `Scanner.fits_budget()` and `budget_advice()` now default `monthly_credits` to 3000, and
+the poll-cost tables are recomputed against 3,000: a single sport polled hourly now fits the free
+tier, and three-hourly fits for one, two or three sports. No API or behaviour changes otherwise.
+
 ## 0.3.1
 
 Attribution only. No behaviour changes to the client, sizing, gating or the ledger — the

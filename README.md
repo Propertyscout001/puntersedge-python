@@ -6,7 +6,7 @@ Official Python client for the [PuntersEdge odds API](https://puntersedge.online
 pip install puntersedge
 ```
 
-Free key: 1,500 credits/month, no credit card — [puntersedge.online/api](https://puntersedge.online/api?utm_source=python_sdk&utm_medium=readme#signup). Or call the `/v1/demo/*` endpoints with no key at all.
+Free key: 3,000 credits/month, no credit card — [puntersedge.online/api](https://puntersedge.online/api?utm_source=python_sdk&utm_medium=readme#signup). Or call the `/v1/demo/*` endpoints with no key at all.
 
 [![PyPI](https://img.shields.io/pypi/v/puntersedge.svg)](https://pypi.org/project/puntersedge/)
 [![Python](https://img.shields.io/pypi/pyversions/puntersedge.svg)](https://pypi.org/project/puntersedge/)
@@ -282,11 +282,11 @@ just with your interval**, which is the part that surprises people.
 | 60s | 172,800 | 302,400 | 432,000 |
 | 5 min | 34,560 | 60,480 | 86,400 |
 | 15 min | 11,520 | 20,160 | 28,800 |
-| 1 hour | 2,880 | 5,040 | 7,200 |
-| 3 hours | **960 — fits** | 1,680 | 2,400 |
+| 1 hour | **2,880 — fits** | 5,040 | 7,200 |
+| 3 hours | **960 — fits** | **1,680 — fits** | **2,400 — fits** |
 
-Against the free tier's 1,500 credits/month, **exactly one cell fits**: a single sport polled
-three-hourly. Everything else is over — a 15-minute two-sport loop by 13×.
+Against the free tier's 3,000 credits/month, **four cells fit**: a single sport polled hourly, or
+one, two or three sports polled three-hourly. Everything else is over — a 15-minute two-sport loop by nearly 7×.
 
 *(Until 2026-08-21 this table assumed a flat 3 credits per poll and understated every figure,
 by roughly 2× at three sports. `estimate_poll_cost()` was right the whole time; the table was

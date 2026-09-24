@@ -481,6 +481,6 @@ def resolve_api_key(
         + "\n\nFix either of:\n"
         "  export %sAPI_KEY=<your key>\n"
         "  printf '[%s]\\napi_key = <your key>\\n' > %s && chmod 600 %s\n"
-        "\nFree key (1,500 credits/mo, no credit card):\n  %s"
+        "\nFree key (3,000 credits/mo, no credit card):\n  %s"
         % (ENV_PREFIX, SECTION, path, path, SIGNUP_URL)
     )

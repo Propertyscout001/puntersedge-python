@@ -4,15 +4,15 @@ CREDITS ARE THE DESIGN CONSTRAINT
 ---------------------------------
 A poll costs 3 credits for `/v1/arb/sports`, plus 1 credit for every distinct sport whose
 candidates need a freshness check (`/v1/sports/{key}/odds?markets=h2h` costs one credit per
-market requested). The free tier is 1,500 credits a month. That arithmetic is brutal and
+market requested). The free tier is 3,000 credits a month. That arithmetic is brutal and
 there is no way to be clever about it:
 
-    interval    credits/month (3+enrich)   vs free tier 1,500
-    30s                        518,400     346x over
-    60s                        259,200     173x over
-    5min                        51,840      35x over
-    15min                       17,280      12x over
-    1h                           4,320       3x over
+    interval    credits/month (3+enrich)   vs free tier 3,000
+    30s                        518,400     173x over
+    60s                        259,200      86x over
+    5min                        51,840      17x over
+    15min                       17,280       6x over
+    1h                           4,320     1.4x over
     3h                           1,440      fits
 
 Two consequences the scanner is built around.
@@ -220,10 +220,10 @@ class Scanner:
         """
         return self.estimate_poll_cost() * (30 * 86400 / max(interval_s, 1))
 
-    def fits_budget(self, interval_s: float, monthly_credits: int = 1500) -> bool:
+    def fits_budget(self, interval_s: float, monthly_credits: int = 3000) -> bool:
         return self.credits_per_month(interval_s) <= monthly_credits
 
-    def budget_advice(self, interval_s: float, monthly_credits: int = 1500) -> str:
+    def budget_advice(self, interval_s: float, monthly_credits: int = 3000) -> str:
         """What this configuration costs per month against a plan, in plain words."""
         per_poll = self.estimate_poll_cost()
         total = self.credits_per_month(interval_s)

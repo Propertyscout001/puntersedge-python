@@ -276,7 +276,7 @@ def build_parser() -> argparse.ArgumentParser:
                     "bookmaker login.",
         epilog="No profit is claimed or implied. Australian bookmakers restrict accounts\n"
                "that arb, usually within weeks.\n\n"
-               "Free API key (1,500 credits/mo, no credit card):\n  "
+               "Free API key (3,000 credits/mo, no credit card):\n  "
                + signup_url("cli_help", source="arb_bundle"),
     )
     p.add_argument("--config-file", help="config file to read instead of the default")
