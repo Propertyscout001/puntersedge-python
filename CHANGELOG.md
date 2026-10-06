@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.3
+
+`racing_next_to_go()` takes `country`, `venue`, `bookmakers`, `num_races` and `include_unresolved`,
+and `racing_events()` takes `country`, matching the API. The British and Irish card is served
+under `country="GB,IE"`, priced by the UK-licensed bookmakers (`ladbrokes_uk`, `williamhill`,
+`betway_uk`) alongside the Australian books that quote it; before this release the client could
+only reach it by calling the endpoint without a filter. No other changes.
+
 ## 0.3.2
 
 Documentation and defaults only. The free tier is **3,000 credits a month, not 1,500** — every

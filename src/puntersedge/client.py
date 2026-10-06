@@ -324,16 +324,27 @@ class PuntersEdge:
         return self._get("/markets/popular")
 
     # ── racing ───────────────────────────────────────────────────────────
-    def racing_next_to_go(self, categories=None):
-        """Next races to jump with runners and prices.
+    def racing_next_to_go(self, categories=None, country=None, venue=None, bookmakers=None,
+                          num_races=None, include_unresolved=None):
+        """Next races to jump with runners and every bookmaker's prices. 2 credits a call.
 
         ``categories`` e.g. "horse", "greyhound", "harness" (comma-joined).
+        ``country`` ISO codes, comma-joined: "AU", "AU,NZ", or "GB,IE" for the British and
+        Irish card, which the UK-licensed books (``ladbrokes_uk``, ``williamhill``,
+        ``betway_uk``) price alongside the Australian books that quote it.
+        ``venue`` and ``bookmakers`` are comma-joined and case-insensitive; ``num_races`` caps
+        the list (up to 200). ``include_unresolved=True`` keeps races whose country is not yet
+        labelled — late Australian card races — when filtering by country.
         """
-        return self._get("/racing/next-to-go", categories=categories)
+        return self._get(
+            "/racing/next-to-go", categories=categories, country=country, venue=venue,
+            bookmakers=bookmakers, num_races=num_races,
+            include_unresolved=(str(include_unresolved).lower() if include_unresolved is not None else None),
+        )
 
-    def racing_events(self, hours_ahead=None, categories=None):
-        """Upcoming races within an ``hours_ahead`` window."""
-        return self._get("/racing/events", hours_ahead=hours_ahead, categories=categories)
+    def racing_events(self, hours_ahead=None, categories=None, country=None):
+        """Upcoming races within an ``hours_ahead`` window; ``country`` as for next-to-go."""
+        return self._get("/racing/events", hours_ahead=hours_ahead, categories=categories, country=country)
 
     def racing_best_odds(self, categories=None, num_races=None, bookmakers=None, country=None):
         """Best win, place and tote price per runner across the AU books. 3 credits.
