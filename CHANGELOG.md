@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.4.0
+
+Conditional requests, on by default. Every 200 from the API carries an `ETag`; the client now
+remembers it (with the body) per URL and query and sends `If-None-Match` on the next identical
+GET. An unchanged answer comes back `304 Not Modified` for 0 credits and no body, and the
+client returns the remembered body, so the call reads exactly as before. A poller re-reading
+an unchanged `racing_next_to_go()` board stops paying for it; `client.last_not_modified` says
+whether the most recent call was served that way. Up to 32 distinct requests are remembered.
+Pass `PuntersEdge(conditional_requests=False)` to switch it off. POST is never conditional.
+
 ## 0.3.3
 
 `racing_next_to_go()` takes `country`, `venue`, `bookmakers`, `num_races` and `include_unresolved`,

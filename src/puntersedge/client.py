@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import time
 from typing import Mapping, Optional, Union
+import json as _stdjson
+from collections import OrderedDict
 from urllib.parse import urlsplit
 
 import requests
@@ -33,6 +35,20 @@ DEFAULT_RETRIES = 2
 _API_KEY_HEADER = "X-API-Key"
 # Hosts where plain http is legitimate, for local development against a stub.
 _LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1", "::1", "[::1]"})
+
+
+#: Distinct GET requests whose ETag and body a client remembers for conditional requests.
+_ETAG_CACHE_MAX = 32
+
+
+def _parse_body_text(text: str):
+    """The same reading `_handle` gives a 2xx body: JSON when it parses, else the text."""
+    if not text:
+        return None
+    try:
+        return _stdjson.loads(text)
+    except ValueError:
+        return text
 
 
 def _client_version() -> str:
@@ -142,6 +158,7 @@ class PuntersEdge:
         *,
         config_file: Optional[PathLike] = None,
         env: Optional[Mapping[str, str]] = None,
+        conditional_requests: bool = True,
     ):
         chain = ConfigChain(env=env, config_file=config_file)
         # Resolved at CONSTRUCTION, so a missing key points the traceback at PuntersEdge()
@@ -185,6 +202,15 @@ class PuntersEdge:
                 "User-Agent": "puntersedge-python/%s" % _client_version(),
             }
         )
+        # CONDITIONAL REQUESTS (0.4.0). Every 200 from the API carries an ETag; a GET to the
+        # same URL and query sends it back as If-None-Match, and an unchanged answer is a
+        # 304 for 0 credits and no body, served to the caller from the body remembered here.
+        # A poller re-reading an unchanged race board stops paying for it. Bounded: the
+        # newest _ETAG_CACHE_MAX distinct requests are remembered, bodies included.
+        self.conditional_requests = bool(conditional_requests)
+        self._etags: "OrderedDict[tuple, tuple[str, str]]" = OrderedDict()
+        #: True when the most recent call was answered 304 and returned the remembered body.
+        self.last_not_modified = False
 
     # A constructed client carries a live key. Pickling one sends it to a multiprocessing
     # worker, a joblib cache, or Streamlit session state — all places nobody audited.
@@ -198,6 +224,15 @@ class PuntersEdge:
     def _request(self, method: str, path: str, params: dict | None = None, json: dict | None = None):
         url = f"{self.base_url}/{path.lstrip('/')}"
         params = {k: v for k, v in (params or {}).items() if v is not None}
+        self.last_not_modified = False
+        # Conditional GET: send the ETag we hold for exactly this URL and query (0.4.0).
+        _ck = None
+        _extra_headers: dict = {}
+        if method.upper() == "GET" and self.conditional_requests:
+            _ck = (url, tuple(sorted((str(k), str(v)) for k, v in params.items())))
+            _held = self._etags.get(_ck)
+            if _held is not None:
+                _extra_headers["If-None-Match"] = _held[0]
         # Only GET is retried. A retried POST can rotate a key twice, and the second
         # rotation invalidates the key the first one returned.
         attempts = self.retries if method.upper() == "GET" else 0
@@ -209,6 +244,7 @@ class PuntersEdge:
                     url,
                     params=params,
                     json=json,
+                    headers=_extra_headers or None,
                     timeout=self.timeout,
                     # requests strips only Authorization/Proxy-Authorization/Cookie across
                     # a cross-host redirect — never a custom auth header. A 302 to another
@@ -228,6 +264,19 @@ class PuntersEdge:
                 # twice on a connection failure, and --showlocals nine times. Nothing
                 # diagnostic is lost: str(exc) already carries the url and the cause.
                 raise last_exc from None
+            if resp.status_code == 304 and _ck is not None:
+                _held = self._etags.get(_ck)
+                if _held is not None:
+                    self._etags.move_to_end(_ck)
+                    self.last_not_modified = True
+                    return _parse_body_text(_held[1])
+                # A 304 for a body we no longer hold (or never asked about): ask again plainly.
+                _extra_headers.pop("If-None-Match", None)
+                if attempt < attempts:
+                    continue
+                raise PuntersEdgeError(
+                    "%s answered 304 Not Modified but this client holds no body for it; "
+                    "call again." % url, 304, None)
             if 300 <= resp.status_code < 400:
                 raise PuntersEdgeError(
                     "%s returned a redirect to %r. The PuntersEdge API does not redirect; "
@@ -239,6 +288,13 @@ class PuntersEdge:
             if resp.status_code >= 500 and attempt < attempts:
                 time.sleep(0.5 * (attempt + 1))
                 continue
+            if _ck is not None and 200 <= resp.status_code < 300:
+                _tag = resp.headers.get("ETag")
+                if _tag and resp.content:
+                    self._etags[_ck] = (_tag, resp.text)
+                    self._etags.move_to_end(_ck)
+                    while len(self._etags) > _ETAG_CACHE_MAX:
+                        self._etags.popitem(last=False)
             return self._handle(resp)
         raise last_exc from None  # pragma: no cover
 

@@ -423,6 +423,23 @@ and why the rest do not.
 
 Data is provided for informational and analytical use only. Odds move — verify each leg before staking. Not financial advice. 18+. Gamble responsibly — [Gambling Help 1800 858 858](https://www.gamblinghelponline.org.au).
 
+## Conditional requests (0.4.0)
+
+Every 200 from the API carries an `ETag`. The client remembers it per URL and query and sends it
+back as `If-None-Match` on the next identical GET; an unchanged answer is a `304 Not Modified`
+for **0 credits** and no body, and the call returns the remembered body, so your code reads
+exactly as before. A poller re-reading an unchanged race board stops paying for it.
+
+```python
+board = pe.racing_next_to_go(num_races=200, country="AU")
+# ... 30 seconds later
+again = pe.racing_next_to_go(num_races=200, country="AU")
+pe.last_not_modified   # True when the board had not changed: that call cost 0 credits
+```
+
+Up to 32 distinct requests are remembered. `PuntersEdge(conditional_requests=False)` switches
+it off; POST is never conditional.
+
 ## License
 
 MIT © PuntersEdge

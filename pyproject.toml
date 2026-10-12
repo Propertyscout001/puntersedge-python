@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "puntersedge"
-version = "0.3.3"
+version = "0.4.0"
 description = "Australian odds API client — horse, greyhound and harness racing plus AFL, NRL and other sports odds from 14 Australian bookmakers, with best-price comparison, results and form."
 readme = "README.md"
 requires-python = ">=3.8"
