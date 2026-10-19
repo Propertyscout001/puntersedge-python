@@ -18,13 +18,17 @@ Free key: 3,000 credits/month, no credit card — [puntersedge.online/api](https
 
 Numbers here are not marketing copy — they are recomputed every 30 minutes and published at
 **[puntersedge.online/coverage-report.json](https://puntersedge.online/coverage-report.json)**. Read that
-rather than trusting this paragraph; the snapshot below was measured **14 Sep 2026 23:06 UTC**.
+rather than trusting this paragraph; the snapshot below was measured **19 Oct 2026 22:35 UTC**.
 
-- **14 Australian bookmakers on racing**: `tab`, `tabtouch`, `betdeluxe`, `betr_au`, `pointsbetau`,
-  `betright`, `playup`, `palmerbet`, `unibet`, `neds`, `ladbrokes_au`, `sportsbet`, `betgold`, `boostbet`.
-  Median books quoting an AU race: **14** (mean 13.18) across 1,539 races in the 7-day window.
+- **15 Australian bookmakers on racing**: `sportsbet`, `betright`, `betr_au`, `palmerbet`, `tab`,
+  `pointsbetau`, `unibet`, `playup`, `tabtouch`, `betdeluxe`, `ladbrokes_au`, `neds`, `bet365`, `betgold`,
+  `boostbet`. Median books quoting an AU race: **15** (mean 14.02) across 1,549 races in the 7-day window.
+  They are 13 independent price sources: `betgold`/`boostbet` and `ladbrokes_au`/`neds` close at the same
+  price on 85%+ of runners (`coverage_summary` in the JSON above).
 - **Racing**: AU thoroughbred, harness and greyhound; NZ thoroughbred and harness. There are **no NZ
-  greyhounds**. Races in other countries appear only because an AU book lists the meeting — the median
+  greyhounds**. British and Irish (`country=GB,IE`) and South African (`country=ZA`) racing carry
+  smaller panels of their own — a median of 4 and 5 books a race in the same window, results without
+  dividends. Races in every other country appear only because an AU book lists the meeting — the median
   there is one book, which is not coverage, and you should not treat it as such.
 - **Sports**: `afl`, `aflw`, `nrl`, `nrlw`, `nba`, `wnba`, `nfl`, `ncaaf`, `mlb`, `nhl`, `mma`,
   `tennis_atp`, `tennis_wta`, `cricket_test`, `cricket_other`, `rugby_union`, `super_league`,

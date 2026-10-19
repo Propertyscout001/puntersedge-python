@@ -113,7 +113,8 @@ def _redact(text: object, secret: Secret) -> str:
 class PuntersEdge:
     """Client for the PuntersEdge Australian Sports Odds API.
 
-    Live bookmaker odds across 14 Australian books, racing next-to-go,
+    Live bookmaker odds across the Australian books (live count:
+    https://puntersedge.online/coverage-report.json), racing next-to-go,
     best-odds comparison, and pre-computed arbitrage / value signals — all
     as clean JSON.
 
